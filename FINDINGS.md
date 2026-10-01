@@ -65,7 +65,7 @@ Suggestion: expose the nodes, edges and declared conditional targets of a `Compi
 
 ## What worked well
 
-- Compile-time validation caught a wrong edge target while the workflows were being written.
+- The three graphs compiled and ran correctly as first written; no library bug turned up.
 - The `START then a then b` DSL and `conditionalEdge(from, targets)` read clearly in real graphs.
 - Interrupt and resume worked across a page reload on the first attempt, including a second
   interrupt after looping back to `draft`.

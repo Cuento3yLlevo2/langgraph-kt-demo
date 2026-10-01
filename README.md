@@ -37,7 +37,7 @@ cd langgraph-kt && ./gradlew publishToMavenLocal
 Then, in this repository:
 
 ```bash
-./gradlew :composeApp:wasmJsBrowserDevelopmentRun   # browser, opens http://localhost:8080
+./gradlew :composeApp:wasmJsBrowserDevelopmentRun   # browser, with a dev server
 ./gradlew :composeApp:run                           # desktop
 ./gradlew :composeApp:jvmTest                       # tests on the JVM
 ./gradlew :composeApp:wasmJsBrowserTest             # the same tests in headless Chrome (needs Chrome)
