@@ -6,10 +6,14 @@ import androidx.compose.runtime.setValue
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.langgraphkt.GraphConfig
 import org.langgraphkt.GraphEvent
+import org.langgraphkt.GraphResult
 import org.langgraphkt.GraphTopology
 import org.langgraphkt.NodeExecutionException
 import org.langgraphkt.demo.llm.ChatMessage
@@ -67,14 +71,20 @@ abstract class WorkflowController(private val scope: CoroutineScope) {
                 error = describe(e)
             } finally {
                 activeNodes = emptySet()
+                // Also after Stop: the screen must show where the saved run stands now.
+                withContext(NonCancellable) { onFinished() }
                 running = false
             }
-            onFinished()
         }
     }
 
     fun stop() {
         job?.cancel()
+    }
+
+    /** Stops the run and waits until it has cleaned up. */
+    protected suspend fun stopAndJoin() {
+        job?.cancelAndJoin()
     }
 
     protected fun describe(e: Exception): String =
@@ -144,10 +154,9 @@ enum class EmailPhase {
 class EmailController(model: ChatModel, store: KeyValueStore, private val scope: CoroutineScope) : WorkflowController(scope) {
     private val graph = EmailApproval.graph(model)
     override val topology: GraphTopology = graph.topology
-    private val checkpointer = StorageCheckpointer(store, CheckpointCodec<EmailState>())
     private val config = GraphConfig(
         threadId = THREAD,
-        checkpointer = checkpointer,
+        checkpointer = StorageCheckpointer(store, CheckpointCodec<EmailState>()),
         interruptBefore = setOf(EmailApproval.REVIEW),
     )
 
@@ -182,9 +191,9 @@ class EmailController(model: ChatModel, store: KeyValueStore, private val scope:
     fun continueRun() = follow(graph.streamResume(config))
 
     fun discard() {
-        stop()
         scope.launch {
-            checkpointer.delete(THREAD)
+            stopAndJoin()
+            config.checkpointer?.delete(THREAD)
             state = null
             phase = EmailPhase.Idle
             restored = false
@@ -206,20 +215,20 @@ class EmailController(model: ChatModel, store: KeyValueStore, private val scope:
         }
     }
 
-    /** The checkpoint is the source of truth for where the run stands, also after a failure. */
+    /** The checkpoint is the source of truth for where the run stands, also after a failure or Stop. */
     private suspend fun syncWithCheckpoint() {
-        val checkpoint = try {
-            checkpointer.load(THREAD)
+        val result = try {
+            graph.lastResult(config)
         } catch (e: Exception) {
             error = describe(e)
             null
         }
-        if (checkpoint == null || checkpoint.isComplete) {
+        if (result !is GraphResult.Interrupted) {
             phase = EmailPhase.Idle
             return
         }
-        state = checkpoint.state
-        phase = if (checkpoint.interruptedBefore) EmailPhase.AwaitingReview else EmailPhase.Unfinished
+        state = result.state
+        phase = if (EmailApproval.REVIEW in result.nextNodes) EmailPhase.AwaitingReview else EmailPhase.Unfinished
     }
 
     private companion object {

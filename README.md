@@ -31,8 +31,7 @@ Each workflow is one file in
 ## Running it
 
 langgraph-kt is not on Maven Central yet, so publish it to your local Maven repository first. The
-app needs the `develop` branch with
-[pull request 7](https://github.com/Cuento3yLlevo2/langgraph-kt/pull/7) merged:
+app needs a `develop` branch that has `CompiledGraph.lastResult`:
 
 ```bash
 git clone -b develop https://github.com/Cuento3yLlevo2/langgraph-kt.git
