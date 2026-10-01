@@ -36,8 +36,8 @@ object ToolAgent {
     const val ASSISTANT: String = "assistant"
     const val TOOLS: String = "tools"
 
-    /** The order in which the UI draws the nodes. */
-    val nodes: List<String> = listOf(START, ASSISTANT, TOOLS, END)
+    /** The stages the UI draws, in order. */
+    val stages: List<List<String>> = listOf(listOf(START), listOf(ASSISTANT), listOf(TOOLS), listOf(END))
 
     const val SYSTEM: String =
         "You are a helpful assistant in a demo of the langgraph-kt library. " +

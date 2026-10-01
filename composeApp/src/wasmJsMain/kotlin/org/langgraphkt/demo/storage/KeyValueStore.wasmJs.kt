@@ -1,4 +1,8 @@
+@file:OptIn(ExperimentalWasmJsInterop::class)
+
 package org.langgraphkt.demo.storage
+
+import kotlin.js.ExperimentalWasmJsInterop
 
 actual fun platformStore(): KeyValueStore = LocalStorageStore()
 

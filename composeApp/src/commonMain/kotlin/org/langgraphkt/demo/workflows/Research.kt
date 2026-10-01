@@ -25,7 +25,8 @@ object Research {
     /** Each angle is a node; all of them run in parallel on the same question. */
     val angles: List<String> = listOf("benefits", "risks", "alternatives")
 
-    val nodes: List<String> = listOf(START) + angles + SUMMARIZE + END
+    /** The angles form one stage because they run side by side. */
+    val stages: List<List<String>> = listOf(listOf(START), angles, listOf(SUMMARIZE), listOf(END))
 
     const val SUMMARY_SYSTEM: String =
         "You combine research notes into one balanced recommendation of at most four sentences."

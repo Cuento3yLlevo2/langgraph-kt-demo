@@ -27,7 +27,7 @@ object EmailApproval {
     const val REVIEW: String = "review"
     const val SEND: String = "send"
 
-    val nodes: List<String> = listOf(START, DRAFT, REVIEW, SEND, END)
+    val stages: List<List<String>> = listOf(listOf(START), listOf(DRAFT), listOf(REVIEW), listOf(SEND), listOf(END))
 
     const val SYSTEM: String =
         "You write short, polite emails. Reply with the email only: a 'Subject:' line, a blank line, then the body."
