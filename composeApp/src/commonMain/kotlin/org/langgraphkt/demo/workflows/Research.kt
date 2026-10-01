@@ -25,9 +25,6 @@ object Research {
     /** Each angle is a node; all of them run in parallel on the same question. */
     val angles: List<String> = listOf("benefits", "risks", "alternatives")
 
-    /** The angles form one stage because they run side by side. */
-    val stages: List<List<String>> = listOf(listOf(START), angles, listOf(SUMMARIZE), listOf(END))
-
     const val SUMMARY_SYSTEM: String =
         "You combine research notes into one balanced recommendation of at most four sentences."
 
@@ -40,8 +37,8 @@ object Research {
     }
 
     /** Fans out to one node per angle, then joins in `summarize`. */
-    fun graph(model: ChatModel, tracker: RunTracker? = null): CompiledGraph<ResearchState> = StateGraph<ResearchState> {
-        val summarize = node(SUMMARIZE, tracker) { state ->
+    fun graph(model: ChatModel): CompiledGraph<ResearchState> = StateGraph<ResearchState> {
+        val summarize = node(SUMMARIZE) { state ->
             val notes = state.findings.entries.joinToString("\n\n") { (angle, text) -> "$angle:\n$text" }
             val reply = model.chat(
                 ChatRequest(listOf(ChatMessage.user("$QUESTION${state.question}\n\n$notes")), SUMMARY_SYSTEM),
@@ -49,7 +46,7 @@ object Research {
             state.copy(summary = reply.text.trim())
         }
         angles.forEach { angle ->
-            val research = node(angle, tracker) { state ->
+            val research = node(angle) { state ->
                 val reply = model.chat(ChatRequest(listOf(ChatMessage.user(QUESTION + state.question)), angleSystem(angle)))
                 state.copy(findings = state.findings + (angle to reply.text.trim()))
             }

@@ -6,7 +6,7 @@ import org.langgraphkt.CheckpointCorruptedException
 import org.langgraphkt.demo.storage.MemoryStore
 import org.langgraphkt.demo.storage.StorageCheckpointer
 import org.langgraphkt.demo.workflows.EmailState
-import org.langgraphkt.serialization.KotlinxStateSerializer
+import org.langgraphkt.serialization.CheckpointCodec
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -14,7 +14,7 @@ import kotlin.test.assertNull
 
 class StorageCheckpointerTest {
     private val store = MemoryStore()
-    private val checkpointer = StorageCheckpointer(store, KotlinxStateSerializer<EmailState>(), keyPrefix = "cp.")
+    private val checkpointer = StorageCheckpointer(store, CheckpointCodec<EmailState>(), keyPrefix = "cp.")
 
     @Test
     fun roundTripsACheckpoint() = runTest {

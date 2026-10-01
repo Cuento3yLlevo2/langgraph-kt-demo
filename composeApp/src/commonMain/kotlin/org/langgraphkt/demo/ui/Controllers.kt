@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import org.langgraphkt.GraphConfig
 import org.langgraphkt.GraphEvent
+import org.langgraphkt.GraphTopology
 import org.langgraphkt.NodeExecutionException
 import org.langgraphkt.demo.llm.ChatMessage
 import org.langgraphkt.demo.llm.ChatModel
@@ -20,14 +21,17 @@ import org.langgraphkt.demo.workflows.EmailApproval
 import org.langgraphkt.demo.workflows.EmailState
 import org.langgraphkt.demo.workflows.Research
 import org.langgraphkt.demo.workflows.ResearchState
-import org.langgraphkt.demo.workflows.RunTracker
 import org.langgraphkt.demo.workflows.ToolAgent
-import org.langgraphkt.serialization.KotlinxStateSerializer
+import org.langgraphkt.serialization.CheckpointCodec
 
 /** Runs a graph for a screen and exposes its progress as Compose state. */
 abstract class WorkflowController(private val scope: CoroutineScope) {
-    val tracker: RunTracker = RunTracker()
+    /** The graph's structure, for drawing it. */
+    abstract val topology: GraphTopology
 
+    /** The nodes that are running right now. */
+    var activeNodes: Set<String> by mutableStateOf(emptySet())
+        private set
     var running: Boolean by mutableStateOf(false)
         private set
     var error: String? by mutableStateOf(null)
@@ -49,8 +53,11 @@ abstract class WorkflowController(private val scope: CoroutineScope) {
         job = scope.launch {
             try {
                 events.collect { event ->
-                    if (event is GraphEvent.StepCompleted) {
-                        steps = steps + "Step ${event.step}: ${event.nodes.joinToString(" + ")}"
+                    when (event) {
+                        is GraphEvent.NodeStarted -> activeNodes = activeNodes + event.node
+                        is GraphEvent.NodeCompleted -> activeNodes = activeNodes - event.node
+                        is GraphEvent.StepCompleted -> steps = steps + "Step ${event.step}: ${event.nodes.joinToString(" + ")}"
+                        is GraphEvent.Completed, is GraphEvent.Interrupted -> Unit
                     }
                     onEvent(event)
                 }
@@ -59,6 +66,7 @@ abstract class WorkflowController(private val scope: CoroutineScope) {
             } catch (e: Exception) {
                 error = describe(e)
             } finally {
+                activeNodes = emptySet()
                 running = false
             }
             onFinished()
@@ -74,7 +82,8 @@ abstract class WorkflowController(private val scope: CoroutineScope) {
 }
 
 class ToolAgentController(model: ChatModel, scope: CoroutineScope) : WorkflowController(scope) {
-    private val graph = ToolAgent.graph(model, tracker = tracker)
+    private val graph = ToolAgent.graph(model)
+    override val topology: GraphTopology = graph.topology
 
     var messages: List<ChatMessage> by mutableStateOf(emptyList())
         private set
@@ -84,7 +93,8 @@ class ToolAgentController(model: ChatModel, scope: CoroutineScope) : WorkflowCon
         val input = AgentState(messages + ChatMessage.user(text.trim()))
         messages = input.messages
         steps = emptyList()
-        run(graph.stream(input)) { event -> messages = event.state.messages }
+        // A node's own result is not the conversation yet; the state after each step is.
+        run(graph.stream(input)) { event -> if (event is GraphEvent.StepCompleted) messages = event.state.messages }
     }
 
     fun clear() {
@@ -96,7 +106,8 @@ class ToolAgentController(model: ChatModel, scope: CoroutineScope) : WorkflowCon
 }
 
 class ResearchController(model: ChatModel, scope: CoroutineScope) : WorkflowController(scope) {
-    private val graph = Research.graph(model, tracker)
+    private val graph = Research.graph(model)
+    override val topology: GraphTopology = graph.topology
 
     var state: ResearchState? by mutableStateOf(null)
         private set
@@ -106,7 +117,14 @@ class ResearchController(model: ChatModel, scope: CoroutineScope) : WorkflowCont
         val input = ResearchState(question.trim())
         state = input
         steps = emptyList()
-        run(graph.stream(input)) { event -> state = event.state }
+        run(graph.stream(input)) { event ->
+            state = when (event) {
+                is GraphEvent.NodeStarted -> return@run
+                // Show each angle's finding as soon as its node finishes, before the step is merged.
+                is GraphEvent.NodeCompleted -> state?.let { it.copy(findings = it.findings + event.state.findings) }
+                else -> event.state
+            }
+        }
     }
 }
 
@@ -124,8 +142,9 @@ enum class EmailPhase {
 }
 
 class EmailController(model: ChatModel, store: KeyValueStore, private val scope: CoroutineScope) : WorkflowController(scope) {
-    private val graph = EmailApproval.graph(model, tracker)
-    private val checkpointer = StorageCheckpointer(store, KotlinxStateSerializer<EmailState>())
+    private val graph = EmailApproval.graph(model)
+    override val topology: GraphTopology = graph.topology
+    private val checkpointer = StorageCheckpointer(store, CheckpointCodec<EmailState>())
     private val config = GraphConfig(
         threadId = THREAD,
         checkpointer = checkpointer,
@@ -177,12 +196,13 @@ class EmailController(model: ChatModel, store: KeyValueStore, private val scope:
     private fun follow(events: Flow<GraphEvent<EmailState>>) {
         restored = false
         run(events, onFinished = { if (phase != EmailPhase.Sent) syncWithCheckpoint() }) { event ->
-            state = event.state
             when (event) {
+                is GraphEvent.NodeStarted, is GraphEvent.NodeCompleted -> return@run
+                is GraphEvent.StepCompleted -> Unit
                 is GraphEvent.Completed -> phase = EmailPhase.Sent
                 is GraphEvent.Interrupted -> phase = EmailPhase.AwaitingReview
-                is GraphEvent.StepCompleted -> Unit
             }
+            state = event.state
         }
     }
 

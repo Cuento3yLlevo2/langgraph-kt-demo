@@ -36,9 +36,6 @@ object ToolAgent {
     const val ASSISTANT: String = "assistant"
     const val TOOLS: String = "tools"
 
-    /** The stages the UI draws, in order. */
-    val stages: List<List<String>> = listOf(listOf(START), listOf(ASSISTANT), listOf(TOOLS), listOf(END))
-
     const val SYSTEM: String =
         "You are a helpful assistant in a demo of the langgraph-kt library. " +
             "Use the calculate tool for any arithmetic and the get_weather tool for weather questions. " +
@@ -48,13 +45,13 @@ object ToolAgent {
      * The classic agent loop as a graph: the model answers or asks for tools, the tools run, and
      * their results go back to the model until it answers in plain text.
      */
-    fun graph(model: ChatModel, tools: List<Tool> = demoTools, tracker: RunTracker? = null): CompiledGraph<AgentState> =
+    fun graph(model: ChatModel, tools: List<Tool> = demoTools): CompiledGraph<AgentState> =
         StateGraph<AgentState> {
-            val assistant = node(ASSISTANT, tracker) { state ->
+            val assistant = node(ASSISTANT) { state ->
                 val reply = model.chat(ChatRequest(state.messages, SYSTEM, tools.map { it.spec }))
                 state.copy(messages = state.messages + reply)
             }
-            val runTools = node(TOOLS, tracker) { state ->
+            val runTools = node(TOOLS) { state ->
                 val results = coroutineScope {
                     state.messages.last().toolCalls.map { call -> async { runTool(tools, call) } }.awaitAll()
                 }

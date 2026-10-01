@@ -8,7 +8,7 @@ import org.langgraphkt.demo.storage.StorageCheckpointer
 import org.langgraphkt.demo.workflows.EmailApproval
 import org.langgraphkt.demo.workflows.EmailState
 import org.langgraphkt.demo.workflows.scriptedDemoModel
-import org.langgraphkt.serialization.KotlinxStateSerializer
+import org.langgraphkt.serialization.CheckpointCodec
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -21,7 +21,7 @@ class EmailApprovalTest {
     /** A fresh graph, checkpointer and config over the same store, as after a page reload. */
     private fun session() = EmailApproval.graph(scriptedDemoModel()) to GraphConfig(
         threadId = "email",
-        checkpointer = StorageCheckpointer(store, KotlinxStateSerializer<EmailState>()),
+        checkpointer = StorageCheckpointer(store, CheckpointCodec<EmailState>()),
         interruptBefore = setOf(EmailApproval.REVIEW),
     )
 

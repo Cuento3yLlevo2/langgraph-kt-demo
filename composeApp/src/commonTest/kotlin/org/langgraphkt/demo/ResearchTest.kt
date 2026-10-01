@@ -7,7 +7,11 @@ import kotlinx.coroutines.test.runTest
 import org.langgraphkt.GraphEvent
 import org.langgraphkt.demo.workflows.Research
 import org.langgraphkt.demo.workflows.ResearchState
-import org.langgraphkt.demo.workflows.RunTracker
+import org.langgraphkt.demo.workflows.EmailApproval
+import org.langgraphkt.demo.workflows.ToolAgent
+import org.langgraphkt.demo.ui.stages
+import org.langgraphkt.END
+import org.langgraphkt.START
 import org.langgraphkt.demo.workflows.scriptedDemoModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -28,15 +32,29 @@ class ResearchTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun anglesRunInParallelAndTheTrackerSeesThem() = runTest {
-        val tracker = RunTracker()
-        val seen = mutableSetOf<Set<String>>()
-        val graph = Research.graph(scriptedDemoModel(delayMillis = 1000), tracker)
-
-        graph.stream(ResearchState("q")).collect { seen += tracker.active.value }
+    fun anglesRunInParallelAndReportTheirOwnFinding() = runTest {
+        val events = Research.graph(scriptedDemoModel(delayMillis = 1000)).stream(ResearchState("q")).toList()
 
         // Three angles in parallel take one model delay, not three; the summary takes a second one.
         assertEquals(2000, currentTime)
-        assertEquals(emptySet(), tracker.active.value)
+        assertEquals(Research.angles, events.take(3).map { assertIs<GraphEvent.NodeStarted<ResearchState>>(it).node })
+        val finished = events.filterIsInstance<GraphEvent.NodeCompleted<ResearchState>>().filter { it.step == 1 }
+        assertEquals(Research.angles.map { setOf(it) }, finished.map { it.state.findings.keys })
+    }
+
+    @Test
+    fun theTopologyGivesTheStagesTheScreenDraws() {
+        assertEquals(
+            listOf(listOf(START), Research.angles, listOf(Research.SUMMARIZE), listOf(END)),
+            Research.graph(scriptedDemoModel()).topology.stages(),
+        )
+        assertEquals(
+            listOf(listOf(START), listOf(ToolAgent.ASSISTANT), listOf(ToolAgent.TOOLS), listOf(END)),
+            ToolAgent.graph(scriptedDemoModel()).topology.stages(),
+        )
+        assertEquals(
+            listOf(listOf(START), listOf(EmailApproval.DRAFT), listOf(EmailApproval.REVIEW), listOf(EmailApproval.SEND), listOf(END)),
+            EmailApproval.graph(scriptedDemoModel()).topology.stages(),
+        )
     }
 }

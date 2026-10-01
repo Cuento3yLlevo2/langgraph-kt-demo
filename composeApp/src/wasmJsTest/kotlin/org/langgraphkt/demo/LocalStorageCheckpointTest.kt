@@ -8,7 +8,7 @@ import org.langgraphkt.demo.storage.StorageCheckpointer
 import org.langgraphkt.demo.workflows.EmailApproval
 import org.langgraphkt.demo.workflows.EmailState
 import org.langgraphkt.demo.workflows.scriptedDemoModel
-import org.langgraphkt.serialization.KotlinxStateSerializer
+import org.langgraphkt.serialization.CheckpointCodec
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -19,7 +19,7 @@ import kotlin.test.assertTrue
 class LocalStorageCheckpointTest {
     private fun config() = GraphConfig(
         threadId = "browser-test",
-        checkpointer = StorageCheckpointer(LocalStorageStore(), KotlinxStateSerializer<EmailState>()),
+        checkpointer = StorageCheckpointer(LocalStorageStore(), CheckpointCodec<EmailState>()),
         interruptBefore = setOf(EmailApproval.REVIEW),
     )
 

@@ -27,6 +27,10 @@ class ToolAgentTest {
         val steps = events.filterIsInstance<GraphEvent.StepCompleted<AgentState>>().map { it.nodes }
         assertEquals(listOf(listOf("assistant"), listOf("tools"), listOf("assistant")), steps)
         val messages = assertIs<GraphEvent.Completed<AgentState>>(events.last()).state.messages
+        assertEquals(
+            listOf("assistant", "tools", "assistant"),
+            events.filterIsInstance<GraphEvent.NodeStarted<AgentState>>().map { it.node },
+        )
         assertEquals("84", messages[2].toolResults.single().content)
         assertEquals("The result is 84.", messages.last().text)
     }

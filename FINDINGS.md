@@ -1,13 +1,13 @@
 # Findings for langgraph-kt
 
-What building this app showed about langgraph-kt `0.1.0-SNAPSHOT` (the `develop` branch on
-2026-10-01). The app uses the library only through its published artifacts.
+What building this app showed about langgraph-kt `0.1.0-SNAPSHOT` (October 2026). The app uses
+the library only through its published artifacts.
 
 ## What was checked
 
 - The app builds against the artifacts from the local Maven repository on the JVM and on wasmJs.
   Gradle picked the right variant for each target with no extra configuration.
-- The 18 common tests pass on the JVM and in headless Chrome (wasmJs). One more browser-only test
+- The 19 common tests pass on the JVM and in headless Chrome (wasmJs). One more browser-only test
   pauses a run in `localStorage` and resumes it from a second session.
 - The production bundle was driven in headless Chrome with the scripted model: the tool loop, the
   approval flow with a change request, a page reload while paused, and the parallel research run
@@ -18,35 +18,20 @@ What building this app showed about langgraph-kt `0.1.0-SNAPSHOT` (the `develop`
 Not checked: a successful Claude call (no API key was available), the desktop window, the Stop
 button, and any browser other than Chrome.
 
-## Gaps worth closing before the release
+## Gaps found, now closed in the library
 
-### 1. Writing a checkpointer means re-inventing the checkpoint format
+The first version of this app needed three workarounds. All three are fixed in langgraph-kt by
+[pull request 7](https://github.com/Cuento3yLlevo2/langgraph-kt/pull/7), and the app now uses the
+new APIs instead.
 
-`FileCheckpointer` only works under Node.js on JS and Wasm, so a browser app needs its own
-checkpointer. `StorageCheckpointer` here is about 50 lines, and most of them rebuild what
-`FileCheckpointer` already has internally: a JSON envelope for `state`, `nextNodes`, `step` and
-`interruptedBefore`, and the mapping of read errors to `CheckpointCorruptedException`.
+| Gap | Workaround the app had | Library fix |
+|---|---|---|
+| A checkpointer for a new storage had to rebuild the checkpoint's JSON envelope | A 50-line `StorageCheckpointer` with its own format | `CheckpointCodec`; the checkpointer is now three one-line methods |
+| `stream()` only reported finished steps, so the UI could not show running nodes | A `RunTracker` wrapped around every node action | `GraphEvent.NodeStarted` and `NodeCompleted` |
+| A compiled graph could not be inspected, so each graph's layout was listed by hand | A `stages` list next to each graph | `CompiledGraph.topology` |
 
-Suggestion: make the envelope public in `langgraph-kt-serialization`, for example a
-`CheckpointCodec<State>` with `encode(Checkpoint<State>): String` and `decode(String)`. A
-checkpointer for `localStorage`, Room, SQLDelight or Redis is then a few lines, and all of them
-share one versioned format.
-
-### 2. `stream()` cannot show which node is running
-
-`GraphEvent.StepCompleted` arrives when a whole step has finished. A UI cannot show that a node has
-started, and with parallel branches it cannot show which ones are still working. The app works
-around it by wrapping every node action (`RunTracker`).
-
-Suggestion: add `GraphEvent.NodeStarted` and `GraphEvent.NodeCompleted` (or a listener on
-`GraphConfig`). This is the gap a Compose user hits first.
-
-### 3. A compiled graph cannot be inspected
-
-To draw the graph, each workflow lists its stages by hand next to the graph definition, and the two
-can drift apart. The original plan had a read-only `GraphTopology`; it was not implemented.
-
-Suggestion: expose the nodes, edges and declared conditional targets of a `CompiledGraph`.
+Writing the codec's tests also uncovered a bug: `FileCheckpointer` never wrote its format version
+into the file. That is fixed in the same pull request.
 
 ## Smaller observations
 

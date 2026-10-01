@@ -5,15 +5,18 @@ A Compose Multiplatform app that runs agent workflows built with
 the desktop (JVM). It exists to try the library in a real application before its first release;
 what that turned up is in [FINDINGS.md](FINDINGS.md).
 
-![The approval workflow paused for review](docs/approval.png)
+![Three research nodes running in parallel](docs/research.png)
 
 ## Workflows
 
 | Screen | Graph | Library features |
 |---|---|---|
 | Tool agent | `assistant` and `tools` in a loop until the model answers in text | Cycles, conditional edges, `stream()` |
-| Approval | `draft`, then a pause before `review`, then `send` or back to `draft` | `interruptBefore`, `resume` with a state update, a custom `Checkpointer`, resuming after a page reload |
-| Research | Three angles in parallel, then `summarize` | Fan-out, `Reducer`, fan-in |
+| Approval | `draft`, then a pause before `review`, then `send` or back to `draft` | `interruptBefore`, `resume` with a state update, a custom `Checkpointer` built on `CheckpointCodec`, resuming after a page reload |
+| Research | Three angles in parallel, then `summarize` | Fan-out, `Reducer`, fan-in, per-node events |
+
+Every screen draws its graph from `CompiledGraph.topology` and highlights the running nodes from
+the `NodeStarted` and `NodeCompleted` events.
 
 Each workflow is one file in
 [`composeApp/src/commonMain/kotlin/org/langgraphkt/demo/workflows`](composeApp/src/commonMain/kotlin/org/langgraphkt/demo/workflows).
@@ -27,10 +30,12 @@ Each workflow is one file in
 
 ## Running it
 
-langgraph-kt is not on Maven Central yet, so publish it to your local Maven repository first:
+langgraph-kt is not on Maven Central yet, so publish it to your local Maven repository first. The
+app needs the `develop` branch with
+[pull request 7](https://github.com/Cuento3yLlevo2/langgraph-kt/pull/7) merged:
 
 ```bash
-git clone https://github.com/Cuento3yLlevo2/langgraph-kt.git
+git clone -b develop https://github.com/Cuento3yLlevo2/langgraph-kt.git
 cd langgraph-kt && ./gradlew publishToMavenLocal
 ```
 

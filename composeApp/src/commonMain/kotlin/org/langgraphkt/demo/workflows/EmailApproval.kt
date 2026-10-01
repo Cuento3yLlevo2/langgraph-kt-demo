@@ -27,8 +27,6 @@ object EmailApproval {
     const val REVIEW: String = "review"
     const val SEND: String = "send"
 
-    val stages: List<List<String>> = listOf(listOf(START), listOf(DRAFT), listOf(REVIEW), listOf(SEND), listOf(END))
-
     const val SYSTEM: String =
         "You write short, polite emails. Reply with the email only: a 'Subject:' line, a blank line, then the body."
 
@@ -38,13 +36,13 @@ object EmailApproval {
      * Run it with `interruptBefore = setOf(REVIEW)`: the run pauses before `review`, and the
      * reviewer's decision is written into the state when the run is resumed.
      */
-    fun graph(model: ChatModel, tracker: RunTracker? = null): CompiledGraph<EmailState> = StateGraph<EmailState> {
-        val draft = node(DRAFT, tracker) { state ->
+    fun graph(model: ChatModel): CompiledGraph<EmailState> = StateGraph<EmailState> {
+        val draft = node(DRAFT) { state ->
             val reply = model.chat(ChatRequest(listOf(ChatMessage.user(prompt(state))), SYSTEM))
             state.copy(draft = reply.text.trim(), revisions = state.revisions + 1, feedback = "")
         }
-        val review = node(REVIEW, tracker) { it }
-        val send = node(SEND, tracker) { it.copy(sent = true) }
+        val review = node(REVIEW) { it }
+        val send = node(SEND) { it.copy(sent = true) }
 
         START then draft then review
         conditionalEdge(review, targets = setOf(send.name, draft.name)) { state ->

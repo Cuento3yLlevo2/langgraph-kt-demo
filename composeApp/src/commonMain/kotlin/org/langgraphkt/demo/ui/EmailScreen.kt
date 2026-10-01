@@ -19,7 +19,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import org.langgraphkt.demo.workflows.EmailApproval
 import org.langgraphkt.demo.workflows.EmailState
 
 @Composable
@@ -29,7 +28,7 @@ fun EmailScreen(controller: EmailController) {
             "The model drafts an email and the run pauses for you before 'review'. Approve it, edit it, or ask for " +
                 "changes. The paused run is saved, so you can reload the page and pick it up again.",
         )
-        GraphStrip(EmailApproval.stages, controller)
+        GraphStrip(controller)
         if (controller.restored) InfoBanner("This run was restored from a saved checkpoint.")
 
         val state = controller.state

@@ -33,7 +33,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import org.langgraphkt.demo.llm.ChatMessage
-import org.langgraphkt.demo.workflows.ToolAgent
 
 private val suggestions = listOf("What is 12 * (3 + 4)?", "What is the weather in Madrid?", "What is 2 + 2, and the weather in Lima?")
 
@@ -51,7 +50,7 @@ fun ToolAgentScreen(controller: ToolAgentController) {
 
     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         ScreenIntro("A chat agent that loops between the model and its tools until the model answers in plain text.")
-        GraphStrip(ToolAgent.stages, controller)
+        GraphStrip(controller)
 
         LazyColumn(Modifier.weight(1f).fillMaxWidth(), listState, verticalArrangement = Arrangement.spacedBy(8.dp)) {
             if (controller.messages.isEmpty()) {

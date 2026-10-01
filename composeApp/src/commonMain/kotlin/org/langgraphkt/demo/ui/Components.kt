@@ -17,21 +17,41 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import org.langgraphkt.END
+import org.langgraphkt.GraphTopology
+import org.langgraphkt.START
+
+/**
+ * Arranges the graph in stages by distance from START, with END last. Nodes that run in parallel
+ * are the same distance away, so they share a stage.
+ */
+fun GraphTopology.stages(): List<List<String>> {
+    val depth = mutableMapOf(START to 0)
+    val queue = ArrayDeque(listOf(START))
+    while (queue.isNotEmpty()) {
+        val node = queue.removeFirst()
+        successors(node).filter { it != END && it !in depth }.forEach {
+            depth[it] = depth.getValue(node) + 1
+            queue.add(it)
+        }
+    }
+    return depth.entries.groupBy({ it.value }, { it.key }).entries.sortedBy { it.key }.map { it.value } + listOf(listOf(END))
+}
 
 /**
  * The graph's stages from left to right, with the nodes running right now highlighted.
  * Nodes that run in parallel share a stage and are stacked.
  */
 @Composable
-fun GraphStrip(stages: List<List<String>>, controller: WorkflowController, modifier: Modifier = Modifier) {
-    val active by controller.tracker.active.collectAsState()
+fun GraphStrip(controller: WorkflowController, modifier: Modifier = Modifier) {
+    val stages = remember(controller) { controller.topology.stages() }
+    val active = controller.activeNodes
     Row(
         modifier.horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(6.dp),
