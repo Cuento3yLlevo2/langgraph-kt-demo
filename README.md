@@ -9,7 +9,7 @@ the ticket cross the board node by node.
 It is the [langgraph-kt tutorial](https://github.com/Cuento3yLlevo2/langgraph-kt/tree/main/docs)
 made playable. Eight stages, one new move each, the same Pixel Pizza help desk growing from two
 nodes to a full agent workflow. One Compose Multiplatform codebase runs it in the browser
-(Kotlin/Wasm) and on the desktop (JVM). No account and no API key needed.
+(Kotlin/Wasm), on the desktop (JVM) and on Android. No account and no API key needed.
 
 ## Stages
 
@@ -45,9 +45,12 @@ Then, in this repository:
 ```bash
 ./gradlew :composeApp:wasmJsBrowserDevelopmentRun   # browser, with a dev server
 ./gradlew :composeApp:run                           # desktop
+./gradlew :androidApp:installDebug                  # Android, on a connected device or emulator
 ```
 
-Requires JDK 17 or newer.
+Requires JDK 17 or newer. The Android app also needs the Android SDK with platform 37: set
+`ANDROID_HOME`, or put `sdk.dir=/path/to/Android/Sdk` in a `local.properties` file in this
+directory. It runs on Android 7 and newer.
 
 Stages 6 and 8 ask a model. By default that is a scripted one with fixed answers. To play them
 with Claude, enter your own Anthropic API key under Options and pick a model; they are listed from
@@ -65,7 +68,8 @@ Requests are billed to your account.
   read from `CompiledGraph.topology`, and they light up from the `NodeStarted`, `NodeCompleted` and
   `StepCompleted` events of the run.
 - **A save point is a checkpoint.** Runs are saved through a `Checkpointer` built on
-  `CheckpointCodec`, into `localStorage` in the browser and into files on the desktop. That is why
+  `CheckpointCodec`, into `localStorage` in the browser and into files on the desktop and on
+  Android. That is why
   a ticket waiting for your decision survives a reload, and why a failed run can be retried from
   the node that failed.
 - **The look is drawn, not themed.** Black, white, a ramp of greys and one red, after
