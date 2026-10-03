@@ -20,3 +20,4 @@ dependencyResolutionManagement {
 rootProject.name = "langgraph-kt-demo"
 
 include(":composeApp")
+include(":androidApp")
