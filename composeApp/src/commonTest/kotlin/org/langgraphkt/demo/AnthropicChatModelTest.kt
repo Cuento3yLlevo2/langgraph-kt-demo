@@ -8,21 +8,21 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.TextContent
 import io.ktor.http.headersOf
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertNull
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import org.langgraphkt.demo.game.Agent
 import org.langgraphkt.demo.llm.AnthropicChatModel
 import org.langgraphkt.demo.llm.ChatMessage
 import org.langgraphkt.demo.llm.ChatModelException
 import org.langgraphkt.demo.llm.ChatRequest
-import org.langgraphkt.demo.workflows.ToolAgent
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
-import kotlin.test.assertNull
 
 class AnthropicChatModelTest {
     private var sent: HttpRequestData? = null
@@ -43,7 +43,7 @@ class AnthropicChatModelTest {
     fun sendsTheRequestTheMessagesApiExpects() = runTest {
         val model = model(HttpStatusCode.OK, """{"stop_reason":"end_turn","content":[{"type":"text","text":"Hi"}]}""")
 
-        val reply = model.chat(ChatRequest(listOf(ChatMessage.user("Hello")), "Be brief", listOf(ToolAgent.calculate.spec)))
+        val reply = model.chat(ChatRequest(listOf(ChatMessage.user("Hello")), "Be brief", listOf(Agent.menuPrice.spec)))
 
         assertEquals("Hi", reply.text)
         val request = sent!!
@@ -54,7 +54,7 @@ class AnthropicChatModelTest {
         val body = sentBody()
         assertEquals("claude-opus-5-5", body["model"]!!.jsonPrimitive.content)
         assertEquals("Be brief", body["system"]!!.jsonPrimitive.content)
-        assertEquals("calculate", body["tools"]!!.jsonArray.single().jsonObject["name"]!!.jsonPrimitive.content)
+        assertEquals("menu_price", body["tools"]!!.jsonArray.single().jsonObject["name"]!!.jsonPrimitive.content)
         assertEquals(
             """[{"role":"user","content":[{"type":"text","text":"Hello"}]}]""",
             body["messages"].toString(),
@@ -66,12 +66,12 @@ class AnthropicChatModelTest {
     fun keepsEveryContentBlockSoTheTurnCanBeSentBackUnchanged() = runTest {
         val content =
             """[{"type":"thinking","thinking":"","signature":"sig"},""" +
-                """{"type":"tool_use","id":"toolu_1","name":"calculate","input":{"expression":"1+1"}}]"""
+                """{"type":"tool_use","id":"toolu_1","name":"menu_price","input":{"item":"cola"}}]"""
         val model = model(HttpStatusCode.OK, """{"stop_reason":"tool_use","content":$content}""")
 
-        val reply = model.chat(ChatRequest(listOf(ChatMessage.user("1+1?"))))
+        val reply = model.chat(ChatRequest(listOf(ChatMessage.user("How much is a cola?"))))
 
-        assertEquals("calculate", reply.toolCalls.single().name)
+        assertEquals("menu_price", reply.toolCalls.single().name)
         assertEquals(content, Json.encodeToString(reply.content))
     }
 

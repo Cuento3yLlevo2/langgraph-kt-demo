@@ -4,7 +4,7 @@ import io.ktor.client.HttpClient
 import org.langgraphkt.demo.llm.AnthropicChatModel
 import org.langgraphkt.demo.llm.ChatModel
 import org.langgraphkt.demo.storage.KeyValueStore
-import org.langgraphkt.demo.workflows.scriptedDemoModel
+import org.langgraphkt.demo.game.scriptedModel
 
 enum class ModelMode { Scripted, Claude }
 
@@ -19,10 +19,10 @@ data class Settings(
         get() = mode == ModelMode.Claude && apiKey.isNotBlank()
 
     val modelLabel: String
-        get() = if (usesClaude) modelId else "Scripted model"
+        get() = if (usesClaude) modelId else "scripted"
 
     fun chatModel(client: HttpClient): ChatModel =
-        if (usesClaude) AnthropicChatModel(client, apiKey.trim(), modelId.trim()) else scriptedDemoModel(delayMillis = 700)
+        if (usesClaude) AnthropicChatModel(client, apiKey.trim(), modelId.trim()) else scriptedModel(delayMillis = 650)
 }
 
 /** Persists the settings. The API key is stored only if the user asked for it. */

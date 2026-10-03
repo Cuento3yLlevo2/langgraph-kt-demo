@@ -1,38 +1,49 @@
 package org.langgraphkt.demo.ui
 
-import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.PrimaryTabRow
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Tab
-import androidx.compose.material3.Text
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import io.ktor.client.HttpClient
 import kotlinx.coroutines.launch
+import org.langgraphkt.demo.game.stages
 import org.langgraphkt.demo.storage.platformStore
 
-private val tabs = listOf("Tool agent", "Approval", "Research", "Settings")
+/** Where the player is. */
+sealed interface Screen {
+    data object Title : Screen
 
-@OptIn(ExperimentalMaterial3Api::class)
+    data object Stages : Screen
+
+    data class Play(val stage: Int) : Screen
+
+    data object Options : Screen
+}
+
+/** True when the window is too narrow for two columns. */
+val LocalCompact = staticCompositionLocalOf { false }
+
 @Composable
 fun App() {
     val scope = rememberCoroutineScope()
@@ -40,44 +51,54 @@ fun App() {
     val repository = remember { SettingsRepository(store) }
     val httpClient = remember { HttpClient() }
     var loaded by remember { mutableStateOf<Settings?>(null) }
-    var tab by remember { mutableStateOf(0) }
+    var screen by remember { mutableStateOf<Screen>(Screen.Title) }
     LaunchedEffect(Unit) { loaded = repository.load() }
 
-    MaterialTheme(colorScheme = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()) {
-        val settings = loaded ?: return@MaterialTheme
-        // New settings mean a new model, and with it fresh workflows.
+    PizzaTheme {
+        val settings = loaded ?: return@PizzaTheme
+        // New settings mean a new model, and with it fresh graphs. Cleared stages and saved runs are kept.
         val model = remember(settings) { settings.chatModel(httpClient) }
-        val agent = remember(model) { ToolAgentController(model, scope) }
-        val email = remember(model) { EmailController(model, store, scope) }
-        val research = remember(model) { ResearchController(model, scope) }
+        val game = remember(model) { Game(model, store, scope) }
+        GameScreens(game, settings, screen, onNavigate = { screen = it }) { updated ->
+            loaded = updated
+            scope.launch { repository.save(updated) }
+        }
+    }
+}
 
-        Scaffold(
-            topBar = {
-                Column {
-                    Row(
-                        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text("langgraph-kt demo", Modifier.weight(1f), style = MaterialTheme.typography.titleLarge)
-                        Text(settings.modelLabel, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-                    }
-                    PrimaryTabRow(selectedTabIndex = tab) {
-                        tabs.forEachIndexed { index, title ->
-                            Tab(selected = tab == index, onClick = { tab = index }, text = { Text(title) })
-                        }
-                    }
-                }
-            },
-        ) { padding ->
-            Box(Modifier.padding(padding).fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-                Box(Modifier.widthIn(max = 840.dp).fillMaxSize().padding(16.dp)) {
-                    when (tab) {
-                        0 -> ToolAgentScreen(agent)
-                        1 -> EmailScreen(email)
-                        2 -> ResearchScreen(research)
-                        else -> SettingsScreen(settings) { updated ->
-                            loaded = updated
-                            scope.launch { repository.save(updated) }
+/** Draws [screen]. Kept apart from [App] so that a screen can be shown without storage or a network client. */
+@Composable
+fun GameScreens(game: Game, settings: Settings, screen: Screen, onNavigate: (Screen) -> Unit, onSave: (Settings) -> Unit) {
+    if (screen == Screen.Title) {
+        TitleScreen(game, settings.modelLabel, onStart = { onNavigate(Screen.Stages) }, onOptions = { onNavigate(Screen.Options) })
+        return
+    }
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        CompositionLocalProvider(LocalCompact provides (maxWidth < 760.dp)) {
+            Column(Modifier.fillMaxSize()) {
+                TopBar(game, settings.modelLabel, onTitle = { onNavigate(Screen.Title) }, onOptions = { onNavigate(Screen.Options) })
+                Box(Modifier.fillMaxWidth().height(1.dp).background(Theme.colors.line))
+                // Keyed on the screen, so each one starts scrolled to its top.
+                key(screen) {
+                    Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), contentAlignment = Alignment.TopCenter) {
+                        Column(
+                            Modifier
+                                .widthIn(max = 1080.dp)
+                                .fillMaxWidth()
+                                .padding(horizontal = if (LocalCompact.current) 16.dp else 28.dp, vertical = 28.dp),
+                            verticalArrangement = Arrangement.spacedBy(20.dp),
+                        ) {
+                            when (screen) {
+                                Screen.Title -> Unit
+                                Screen.Stages -> StageSelectScreen(game) { onNavigate(Screen.Play(it)) }
+                                is Screen.Play -> StageScreen(
+                                    game.controller(screen.stage),
+                                    settings.modelLabel,
+                                    onStages = { onNavigate(Screen.Stages) },
+                                    onNext = if (screen.stage < stages.size) ({ onNavigate(Screen.Play(screen.stage + 1)) }) else null,
+                                )
+                                Screen.Options -> OptionsScreen(settings, game, onSave) { onNavigate(Screen.Stages) }
+                            }
                         }
                     }
                 }

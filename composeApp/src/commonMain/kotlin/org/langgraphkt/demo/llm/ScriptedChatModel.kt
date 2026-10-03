@@ -8,8 +8,8 @@ fun interface Responder {
 }
 
 /**
- * A deterministic stand-in for a language model, so every workflow runs without an API key.
- * Each workflow contributes a [Responder] for its own prompts.
+ * A deterministic stand-in for a language model, so every stage runs without an API key.
+ * Each stage that asks a model contributes a [Responder] for its own prompts.
  */
 class ScriptedChatModel(
     private val responders: List<Responder>,
@@ -18,6 +18,6 @@ class ScriptedChatModel(
     override suspend fun chat(request: ChatRequest): ChatMessage {
         delay(delayMillis)
         return responders.firstNotNullOfOrNull { it.respond(request) }
-            ?: ChatMessage.assistant("The scripted model has no answer for this. Switch to Claude in Settings for real replies.")
+            ?: ChatMessage.assistant("The scripted model has no answer for this. Switch to Claude under Options for real replies.")
     }
 }

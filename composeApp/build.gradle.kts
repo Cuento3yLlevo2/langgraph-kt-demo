@@ -35,7 +35,7 @@ kotlin {
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.ui)
-            implementation(libs.compose.material3)
+            implementation(libs.compose.animation)
             implementation(libs.compose.resources)
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization.json)
