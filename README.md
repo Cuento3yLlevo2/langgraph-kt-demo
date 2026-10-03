@@ -6,7 +6,7 @@ the ticket cross the board node by node.
 
 ![Stage 8: the kitchen and the driver run at the same time](docs/stage.png)
 
-It is the [langgraph-kt tutorial](https://github.com/Cuento3yLlevo2/langgraph-kt/tree/develop/docs)
+It is the [langgraph-kt tutorial](https://github.com/Cuento3yLlevo2/langgraph-kt/tree/main/docs)
 made playable. Eight stages, one new move each, the same Pixel Pizza help desk growing from two
 nodes to a full agent workflow. One Compose Multiplatform codebase runs it in the browser
 (Kotlin/Wasm) and on the desktop (JVM). No account and no API key needed.
@@ -36,7 +36,7 @@ board, the ticket panel and the run log are drawn from the events of `stream()` 
 langgraph-kt is not on Maven Central yet, so publish it to your local Maven repository first:
 
 ```bash
-git clone -b develop https://github.com/Cuento3yLlevo2/langgraph-kt.git
+git clone https://github.com/Cuento3yLlevo2/langgraph-kt.git
 cd langgraph-kt && ./gradlew publishToMavenLocal
 ```
 
