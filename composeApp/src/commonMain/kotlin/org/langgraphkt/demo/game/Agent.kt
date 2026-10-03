@@ -13,7 +13,7 @@ import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
 import org.langgraphkt.CompiledGraph
-import org.langgraphkt.END
+import org.langgraphkt.NodeRef
 import org.langgraphkt.START
 import org.langgraphkt.StateGraph
 import org.langgraphkt.demo.llm.ChatMessage
@@ -58,8 +58,8 @@ object Agent {
         }
 
         START then assistant
-        conditionalEdge(assistant, targets = setOf(runTools.name, END)) { ticket ->
-            if (ticket.chat.last().toolCalls.isEmpty()) END else runTools.name
+        conditionalEdge(assistant, targets = setOf(runTools, NodeRef.END)) { ticket ->
+            if (ticket.chat.last().toolCalls.isEmpty()) NodeRef.END else runTools
         }
         runTools then assistant
     }.compile()

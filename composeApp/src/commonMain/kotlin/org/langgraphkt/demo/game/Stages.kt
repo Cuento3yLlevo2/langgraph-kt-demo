@@ -83,9 +83,9 @@ val stages: List<Stage> = listOf(
     Stage(
         number = 4,
         title = "Two at once",
-        moves = "fan-out / Reducer",
+        moves = "fan-out / work and update",
         briefing = "Asking the kitchen and the driver one after the other is slow, so both run in the same step. " +
-            "Each returns its own copy of the ticket, and a reducer merges what they found.",
+            "Their work happens at the same time, and each then writes its fact into the ticket, one after the other.",
         tutorial = 5,
         inbox = listOf(delivery, Mail("Ben", "Is my order close?")),
         board = mapOf(
