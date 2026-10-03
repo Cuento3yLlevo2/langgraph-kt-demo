@@ -35,6 +35,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.coerceAtMost
 import androidx.compose.ui.unit.dp
 import org.langgraphkt.demo.game.stages
+import org.langgraphkt.demo.llm.ClaudeModel
+import org.langgraphkt.demo.llm.ClaudeModels
 
 private const val TITLE = "Pixel Pizza"
 
@@ -204,6 +206,23 @@ private fun StageCard(controller: StageController, cleared: Boolean, modifier: M
     }
 }
 
+/** The Claude models, cheapest first, with what a million tokens cost on each. */
+@Composable
+private fun ModelPicker(selected: ClaudeModel, onSelect: (ClaudeModel) -> Unit) {
+    Column {
+        Label("Claude model, cheapest first")
+        ClaudeModels.all.forEach { model ->
+            Choice(
+                model == selected,
+                model.name,
+                "$${model.inputPrice} in / $${model.outputPrice} out per million tokens",
+                { onSelect(model) },
+            )
+        }
+        Body("List prices in US dollars, September 2026.", color = Theme.colors.dim)
+    }
+}
+
 @Composable
 fun OptionsScreen(settings: Settings, game: Game, onSave: (Settings) -> Unit, onBack: () -> Unit) {
     val colors = Theme.colors
@@ -226,7 +245,7 @@ fun OptionsScreen(settings: Settings, game: Game, onSave: (Settings) -> Unit, on
         )
         if (draft.mode == ModelMode.Claude) {
             Field(draft.apiKey, { draft = draft.copy(apiKey = it) }, label = "Anthropic API key", secret = true)
-            Field(draft.modelId, { draft = draft.copy(modelId = it) }, label = "Model")
+            ModelPicker(ClaudeModels.byId(draft.modelId)) { draft = draft.copy(modelId = it.id) }
             Choice(
                 draft.rememberKey,
                 "Remember the key on this device",

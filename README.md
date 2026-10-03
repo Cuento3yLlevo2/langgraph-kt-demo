@@ -50,7 +50,8 @@ Then, in this repository:
 Requires JDK 17 or newer.
 
 Stages 6 and 8 ask a model. By default that is a scripted one with fixed answers. To play them
-with Claude, enter your own Anthropic API key under Options. The key goes straight from the app
+with Claude, enter your own Anthropic API key under Options and pick a model; they are listed from
+the cheapest to the most expensive, with their prices. The key goes straight from the app
 to `api.anthropic.com` and is kept in memory unless you tick "Remember the key on this device".
 Requests are billed to your account.
 

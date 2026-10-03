@@ -33,7 +33,7 @@ import kotlinx.serialization.json.putJsonObject
 class AnthropicChatModel(
     private val client: HttpClient,
     private val apiKey: String,
-    private val model: String = DEFAULT_MODEL,
+    private val model: ClaudeModel = ClaudeModels.default,
 ) : ChatModel {
     override suspend fun chat(request: ChatRequest): ChatMessage {
         val responseText: String
@@ -42,7 +42,7 @@ class AnthropicChatModel(
             val response = client.post(MESSAGES_URL) {
                 header("x-api-key", apiKey)
                 header("anthropic-version", API_VERSION)
-                header("anthropic-beta", FALLBACK_BETA)
+                if (model.hasFallbacks) header("anthropic-beta", FALLBACK_BETA)
                 header("anthropic-dangerous-direct-browser-access", "true")
                 contentType(ContentType.Application.Json)
                 setBody(requestBody(request).toString())
@@ -77,11 +77,11 @@ class AnthropicChatModel(
     }
 
     private fun requestBody(request: ChatRequest): JsonObject = buildJsonObject {
-        put("model", model)
+        put("model", model.id)
         put("max_tokens", MAX_TOKENS)
         // If a safety classifier declines the request, the API re-runs it on a fallback model.
-        put("fallbacks", "default")
-        putJsonObject("output_config") { put("effort", EFFORT) }
+        if (model.hasFallbacks) put("fallbacks", "default")
+        if (model.takesEffort) putJsonObject("output_config") { put("effort", EFFORT) }
         request.system?.let { put("system", it) }
         if (request.tools.isNotEmpty()) {
             putJsonArray("tools") {
@@ -99,15 +99,13 @@ class AnthropicChatModel(
         put("messages", json.encodeToJsonElement(request.messages))
     }
 
-    companion object {
-        const val DEFAULT_MODEL: String = "claude-opus-5-5"
+    private companion object {
+        const val MESSAGES_URL = "https://api.anthropic.com/v1/messages"
+        const val API_VERSION = "2023-06-01"
+        const val FALLBACK_BETA = "server-side-fallback-2026-07-01"
+        const val MAX_TOKENS = 16000
+        const val EFFORT = "medium"
 
-        private const val MESSAGES_URL = "https://api.anthropic.com/v1/messages"
-        private const val API_VERSION = "2023-06-01"
-        private const val FALLBACK_BETA = "server-side-fallback-2026-07-01"
-        private const val MAX_TOKENS = 16000
-        private const val EFFORT = "medium"
-
-        private val json = Json { ignoreUnknownKeys = true }
+        val json = Json { ignoreUnknownKeys = true }
     }
 }

@@ -12,6 +12,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -23,11 +24,13 @@ import org.langgraphkt.demo.llm.AnthropicChatModel
 import org.langgraphkt.demo.llm.ChatMessage
 import org.langgraphkt.demo.llm.ChatModelException
 import org.langgraphkt.demo.llm.ChatRequest
+import org.langgraphkt.demo.llm.ClaudeModel
+import org.langgraphkt.demo.llm.ClaudeModels
 
 class AnthropicChatModelTest {
     private var sent: HttpRequestData? = null
 
-    private fun model(status: HttpStatusCode, body: String) = AnthropicChatModel(
+    private fun model(status: HttpStatusCode, body: String, model: ClaudeModel = ClaudeModels.default) = AnthropicChatModel(
         HttpClient(
             MockEngine { request ->
                 sent = request
@@ -35,6 +38,7 @@ class AnthropicChatModelTest {
             },
         ),
         apiKey = "test-key",
+        model = model,
     )
 
     private fun sentBody(): JsonObject = Json.parseToJsonElement((sent!!.body as TextContent).text).jsonObject
@@ -60,6 +64,40 @@ class AnthropicChatModelTest {
             body["messages"].toString(),
         )
         assertNull(body["thinking"])
+    }
+
+    @Test
+    fun leavesOutWhatTheChosenModelDoesNotTake() = runTest {
+        val ok = """{"stop_reason":"end_turn","content":[{"type":"text","text":"Hi"}]}"""
+
+        model(HttpStatusCode.OK, ok, ClaudeModels.haiku).chat(ChatRequest(listOf(ChatMessage.user("Hello"))))
+
+        assertEquals("claude-haiku-4-5", sentBody()["model"]!!.jsonPrimitive.content)
+        assertNull(sentBody()["output_config"])
+        assertNull(sentBody()["fallbacks"])
+        assertNull(sent!!.headers["anthropic-beta"])
+
+        model(HttpStatusCode.OK, ok, ClaudeModels.sonnet).chat(ChatRequest(listOf(ChatMessage.user("Hello"))))
+
+        assertEquals("claude-sonnet-5-5", sentBody()["model"]!!.jsonPrimitive.content)
+        assertEquals("medium", sentBody()["output_config"]!!.jsonObject["effort"]!!.jsonPrimitive.content)
+        assertEquals("default", sentBody()["fallbacks"]!!.jsonPrimitive.content)
+        assertEquals("server-side-fallback-2026-07-01", sent!!.headers["anthropic-beta"])
+    }
+
+    @Test
+    fun theModelsAreListedFromCheapestToMostExpensive() {
+        assertEquals(ClaudeModels.all.sortedBy { it.inputPrice }, ClaudeModels.all)
+        assertEquals(ClaudeModels.all.sortedBy { it.outputPrice }, ClaudeModels.all)
+        assertTrue(ClaudeModels.default in ClaudeModels.all)
+    }
+
+    @Test
+    fun aStoredModelIdIsMatchedToAModelOnTheList() {
+        assertEquals(ClaudeModels.haiku, ClaudeModels.byId("claude-haiku-4-5-20251001"))
+        assertEquals(ClaudeModels.sonnet, ClaudeModels.byId(" claude-sonnet-5-5 "))
+        assertEquals(ClaudeModels.default, ClaudeModels.byId("some-model-that-is-gone"))
+        assertEquals(ClaudeModels.default, ClaudeModels.byId(""))
     }
 
     @Test
