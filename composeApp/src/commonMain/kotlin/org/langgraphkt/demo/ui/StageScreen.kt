@@ -29,7 +29,7 @@ import org.langgraphkt.demo.game.Stage
 import org.langgraphkt.demo.game.Ticket
 import org.langgraphkt.demo.game.stages
 
-private const val TUTORIAL = "https://github.com/Cuento3yLlevo2/langgraph-kt/blob/develop/docs/"
+private const val TUTORIAL = "https://github.com/Cuento3yLlevo2/langgraph-kt/blob/main/docs/"
 private val tutorialPages = mapOf(
     2 to "02-a-line-of-nodes.md",
     3 to "03-choices.md",
