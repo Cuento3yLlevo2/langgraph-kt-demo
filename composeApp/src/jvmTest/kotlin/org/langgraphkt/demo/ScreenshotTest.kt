@@ -13,6 +13,7 @@ import org.langgraphkt.demo.game.scriptedModel
 import org.langgraphkt.demo.storage.MemoryStore
 import org.langgraphkt.demo.ui.Game
 import org.langgraphkt.demo.ui.GameScreens
+import org.langgraphkt.demo.ui.ModelMode
 import org.langgraphkt.demo.ui.PizzaTheme
 import org.langgraphkt.demo.ui.Screen
 import org.langgraphkt.demo.ui.Settings
@@ -31,9 +32,16 @@ class ScreenshotTest {
     private val delivery = Mail("Ana", "Where is my pizza?")
     private val refund = Mail("Ben", "My pizza arrived cold. I want a refund.")
 
-    private fun shoot(name: String, screen: Screen, width: Int = 1280, height: Int = 860, dark: Boolean = true) {
+    private fun shoot(
+        name: String,
+        screen: Screen,
+        width: Int = 1280,
+        height: Int = 860,
+        dark: Boolean = true,
+        settings: Settings = Settings(),
+    ) {
         ImageComposeScene(width * 2, height * 2, Density(2f)) {
-            PizzaTheme(dark) { GameScreens(game, Settings(), screen, onNavigate = {}, onSave = {}) }
+            PizzaTheme(dark) { GameScreens(game, settings, screen, onNavigate = {}, onSave = {}) }
         }.use { scene ->
             // Text that is typed out letter by letter needs a second of real time to be complete.
             scene.render().close()
@@ -82,5 +90,6 @@ class ScreenshotTest {
         shoot("stages", Screen.Stages)
         shoot("stages-phone", Screen.Stages, width = 390, height = 1100)
         shoot("options", Screen.Options)
+        shoot("options-claude", Screen.Options, height = 1000, settings = Settings(mode = ModelMode.Claude, apiKey = "sk-ant-example"))
     }
 }
