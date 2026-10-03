@@ -51,6 +51,9 @@ kotlin {
             implementation(libs.kotlinx.coroutines.swing)
             implementation(libs.ktor.client.cio)
         }
+        jvmTest.dependencies {
+            implementation(libs.compose.ui.test)
+        }
         wasmJsMain.dependencies {
             implementation(libs.ktor.client.js)
         }
