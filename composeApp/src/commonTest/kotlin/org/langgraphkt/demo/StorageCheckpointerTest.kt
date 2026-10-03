@@ -3,9 +3,9 @@ package org.langgraphkt.demo
 import kotlinx.coroutines.test.runTest
 import org.langgraphkt.Checkpoint
 import org.langgraphkt.CheckpointCorruptedException
+import org.langgraphkt.demo.game.Ticket
 import org.langgraphkt.demo.storage.MemoryStore
 import org.langgraphkt.demo.storage.StorageCheckpointer
-import org.langgraphkt.demo.workflows.EmailState
 import org.langgraphkt.serialization.CheckpointCodec
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -14,11 +14,11 @@ import kotlin.test.assertNull
 
 class StorageCheckpointerTest {
     private val store = MemoryStore()
-    private val checkpointer = StorageCheckpointer(store, CheckpointCodec<EmailState>(), keyPrefix = "cp.")
+    private val checkpointer = StorageCheckpointer(store, CheckpointCodec<Ticket>(), keyPrefix = "cp.")
 
     @Test
     fun roundTripsACheckpoint() = runTest {
-        val checkpoint = Checkpoint(EmailState("Ana", "say hi", draft = "Hi"), listOf("review"), step = 1, interruptedBefore = true)
+        val checkpoint = Checkpoint(Ticket("Ana", "I want a refund", refund = 12), listOf("pay"), step = 1, interruptedBefore = true)
 
         checkpointer.save("t1", checkpoint)
 
@@ -28,7 +28,7 @@ class StorageCheckpointerTest {
 
     @Test
     fun deleteRemovesTheCheckpoint() = runTest {
-        checkpointer.save("t1", Checkpoint(EmailState("Ana", "say hi"), emptyList(), step = 3))
+        checkpointer.save("t1", Checkpoint(Ticket("Ana", "Where is my pizza?"), emptyList(), step = 3))
 
         checkpointer.delete("t1")
 

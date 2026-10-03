@@ -3,7 +3,12 @@
 What building this app showed about langgraph-kt `0.1.0-SNAPSHOT` (October 2026). The app uses
 the library only through its published artifacts.
 
-## What was checked
+The app was built twice. The first version had three separate screens: a tool agent, an email
+approval flow and a parallel research run. The second version is the game in this repository,
+with the eight help desks of the library's tutorial as stages. Most of this file is about the
+first version; [The second version](#the-second-version-the-game) says what the rebuild added.
+
+## What was checked in the first version
 
 - The app builds against the artifacts from the local Maven repository on the JVM and on wasmJs.
   Gradle picked the right variant for each target with no extra configuration.
@@ -66,3 +71,35 @@ into the file. That is fixed in the same pull request.
   interrupt after looping back to `draft`.
 - Fan-out with a `Reducer` ran the three branches concurrently in the browser.
 - `NodeExecutionException` gave the UI a useful error message with no extra code.
+
+## The second version: the game
+
+What was checked:
+
+- The 31 common tests pass on the JVM and in headless Chrome (wasmJs), with one more browser-only
+  test that pauses a run in `localStorage` and resumes it from a second session. They cover the
+  graph of every stage and the game behind the screens: a run that lights its path, parallel
+  nodes, a save point answered after a "reload", a failed node retried from its checkpoint, Stop,
+  and the cleared stages surviving a new session.
+- On the JVM, one test clicks through the screens (title, stage select, run, approve, next stage)
+  and another draws every screen in dark, light and at phone width.
+- The production browser bundle loads and draws the title screen in headless Chrome.
+
+Not checked: clicking through the game in a real browser or in the desktop window, and, as
+before, a successful Claude call.
+
+What the rebuild showed about the library:
+
+- **Eight graphs, no library change.** Every level of the tutorial ran as written inside a
+  Compose app on both targets, sharing one `@Serializable` state.
+- **`topology` is enough to draw a board, but not to lay one out.** The arrows, and which of them
+  are conditional, come from `CompiledGraph.topology`. Where a node sits is still the app's
+  decision: each stage places its nodes by hand, and a test checks that the placement and the
+  graph agree.
+- **Events name nodes, not edges.** To light the arrow a run just followed, the app pairs the
+  nodes of the last `StepCompleted` with the next `NodeStarted` and looks the pair up in the
+  topology. That is three lines here, but an event that says where a node was reached from would
+  make it none.
+- **`lastResult` after a failure says where a retry starts.** The game-over screen uses it to tell
+  the player whether a retry resumes at the failed node or starts over because nothing was saved
+  yet. It needed no extra bookkeeping.

@@ -35,7 +35,8 @@ kotlin {
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.ui)
-            implementation(libs.compose.material3)
+            implementation(libs.compose.animation)
+            implementation(libs.compose.resources)
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.ktor.client.core)
@@ -50,10 +51,17 @@ kotlin {
             implementation(libs.kotlinx.coroutines.swing)
             implementation(libs.ktor.client.cio)
         }
+        jvmTest.dependencies {
+            implementation(libs.compose.ui.test)
+        }
         wasmJsMain.dependencies {
             implementation(libs.ktor.client.js)
         }
     }
+}
+
+compose.resources {
+    packageOfResClass = "org.langgraphkt.demo.resources"
 }
 
 compose.desktop {

@@ -5,7 +5,7 @@ import androidx.compose.ui.window.application
 import org.langgraphkt.demo.ui.App
 
 fun main() = application {
-    Window(onCloseRequest = ::exitApplication, title = "langgraph-kt demo") {
+    Window(onCloseRequest = ::exitApplication, title = "Pixel Pizza") {
         App()
     }
 }
