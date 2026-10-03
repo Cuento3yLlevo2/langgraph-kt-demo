@@ -2,7 +2,7 @@ package org.langgraphkt.demo.game
 
 import org.langgraphkt.CompiledGraph
 import org.langgraphkt.END
-import org.langgraphkt.Reducer
+import org.langgraphkt.NodeRef
 import org.langgraphkt.START
 import org.langgraphkt.StateGraph
 import org.langgraphkt.demo.llm.ChatMessage
@@ -58,11 +58,11 @@ object HelpDesks {
         }
 
         START then read
-        conditionalEdge(read, targets = setOf(track.name, refund.name, answer.name)) { ticket ->
+        conditionalEdge(read, targets = setOf(track, refund, answer)) { ticket ->
             when (ticket.topic) {
-                "delivery" -> track.name
-                "refund" -> refund.name
-                else -> answer.name
+                "delivery" -> track
+                "refund" -> refund
+                else -> answer
             }
         }
         track then END
@@ -96,26 +96,28 @@ object HelpDesks {
         }
 
         START then write then check
-        conditionalEdge(check, targets = setOf(write.name, END)) { ticket ->
-            if (ticket.problem.isEmpty() || ticket.attempts >= LOOP_ATTEMPTS) END else write.name
+        conditionalEdge(check, targets = setOf(write, NodeRef.END)) { ticket ->
+            if (ticket.problem.isEmpty() || ticket.attempts >= LOOP_ATTEMPTS) NodeRef.END else write
         }
     }.compile()
 
-    /** Merges the copies returned by nodes that ran at the same time: keep every fact, once. */
-    val collectFacts: Reducer<Ticket> = Reducer { current, updates ->
-        current.copy(facts = (current.facts + updates.flatMap { it.facts }).distinct())
+    /** A slow call to the kitchen. */
+    private suspend fun askKitchen(desk: Desk): String {
+        desk.work()
+        return "your pizza left the oven"
     }
 
-    /** Stage 4: two lookups run at the same time, and a reducer merges what they found. */
+    /** A slow call to the driver. */
+    private suspend fun askDriver(desk: Desk): String {
+        desk.work()
+        return "the driver is 5 minutes away"
+    }
+
+    /** Stage 4: two lookups run at the same time, and each then writes its fact into the ticket. */
     fun parallel(desk: Desk): CompiledGraph<Ticket> = StateGraph<Ticket> {
-        val kitchen = node(KITCHEN) { ticket ->
-            desk.work()
-            ticket.copy(facts = ticket.facts + "your pizza left the oven")
-        }
-        val driver = node("driver") { ticket ->
-            desk.work()
-            ticket.copy(facts = ticket.facts + "the driver is 5 minutes away")
-        }
+        // `work` asks and returns what it found. The block after it writes that fact into the ticket.
+        val kitchen = node(KITCHEN, work = { askKitchen(desk) }) { ticket, fact -> ticket.copy(facts = ticket.facts + fact) }
+        val driver = node("driver", work = { askDriver(desk) }) { ticket, fact -> ticket.copy(facts = ticket.facts + fact) }
         val answer = node("answer") { ticket ->
             desk.work()
             ticket.copy(reply = "Hi ${ticket.customer}, ${ticket.facts.joinToString(" and ")}.")
@@ -124,7 +126,7 @@ object HelpDesks {
         START then kitchen then answer
         START then driver then answer
         answer then END
-    }.compile(reducer = collectFacts)
+    }.compile()
 
     private fun payOut(ticket: Ticket): Ticket = if (ticket.approved) {
         ticket.copy(reply = "Sorry ${ticket.customer}! We sent you ${ticket.refund} euros.")
@@ -195,17 +197,11 @@ object HelpDesks {
             ticket.copy(topic = topicOf(ticket.message))
         }
 
-        // Delivery questions: two lookups at the same time. A router returns one name, so the
+        // Delivery questions: two lookups at the same time. A router returns one node, so the
         // fan-out starts at a node of its own that passes the ticket on unchanged.
         val lookUp = node("look_up") { ticket -> ticket }
-        val kitchen = node(KITCHEN) { ticket ->
-            desk.work()
-            ticket.copy(facts = ticket.facts + "your pizza left the oven")
-        }
-        val driver = node("driver") { ticket ->
-            desk.work()
-            ticket.copy(facts = ticket.facts + "the driver is 5 minutes away")
-        }
+        val kitchen = node(KITCHEN, work = { askKitchen(desk) }) { ticket, fact -> ticket.copy(facts = ticket.facts + fact) }
+        val driver = node("driver", work = { askDriver(desk) }) { ticket, fact -> ticket.copy(facts = ticket.facts + fact) }
 
         // Every reply is written and checked, and rewritten if the check finds a problem.
         val write = node("write") { ticket ->
@@ -228,23 +224,23 @@ object HelpDesks {
         }
 
         START then read
-        conditionalEdge(read, targets = setOf(lookUp.name, prepare.name, write.name)) { ticket ->
+        conditionalEdge(read, targets = setOf(lookUp, prepare, write)) { ticket ->
             when (ticket.topic) {
-                "delivery" -> lookUp.name
-                "refund" -> prepare.name
-                else -> write.name
+                "delivery" -> lookUp
+                "refund" -> prepare
+                else -> write
             }
         }
 
         lookUp then kitchen then write
         lookUp then driver then write
         write then check
-        conditionalEdge(check, targets = setOf(write.name, END)) { ticket ->
-            if (ticket.problem.isEmpty() || ticket.attempts >= WRITE_ATTEMPTS) END else write.name
+        conditionalEdge(check, targets = setOf(write, NodeRef.END)) { ticket ->
+            if (ticket.problem.isEmpty() || ticket.attempts >= WRITE_ATTEMPTS) NodeRef.END else write
         }
 
         prepare then pay then END
-    }.compile(reducer = collectFacts)
+    }.compile()
 
     /** The scripted writer forgets the customer's name until the check asks for it. */
     val writerScript: Responder = Responder { request ->

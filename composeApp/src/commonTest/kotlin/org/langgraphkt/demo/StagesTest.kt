@@ -64,7 +64,7 @@ class StagesTest {
     }
 
     @Test
-    fun theReducerKeepsTheFactsOfBothLookups() = runTest {
+    fun bothLookupsWriteTheirFactIntoTheTicket() = runTest {
         val ticket = HelpDesks.parallel(desk).invoke(ana).state
 
         assertEquals(listOf("your pizza left the oven", "the driver is 5 minutes away"), ticket.facts)
