@@ -6,25 +6,31 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import org.langgraphkt.END
 import org.langgraphkt.START
@@ -40,6 +46,12 @@ private const val MARGIN = 28f
 
 /** How far below a row an arrow that goes back to an earlier column runs. */
 private const val LANE = 14f
+
+/** The width of the fade at the side of a board that scrolls. */
+private const val FADE = 44f
+
+/** The smallest size the board is drawn at, as a part of its full size. Smaller, and its labels cannot be read. */
+private const val MIN_SCALE = 0.6f
 
 private enum class TileLook { Idle, Done, Running, Waiting, Failed }
 
@@ -87,34 +99,58 @@ fun Board(controller: StageController, modifier: Modifier = Modifier) {
     val trail = controller.trail
     val description = "Graph: " + edges.joinToString(", ") { "${it.from.trim('_')} to ${it.to.trim('_')}" }
 
-    Box(modifier.horizontalScroll(rememberScrollState()), contentAlignment = Alignment.Center) {
-        Box(Modifier.size(width.dp, height.dp).semantics { contentDescription = description }) {
-            Canvas(Modifier.size(width.dp, height.dp)) {
-                // Unlit arrows first, so that a lit one is never drawn over.
-                edges.sortedBy { (it.from to it.to) in trail }.forEach { edge ->
-                    val lit = (edge.from to edge.to) in trail
-                    arrow(route(cells.getValue(edge.from), cells.getValue(edge.to)), if (lit) colors.ink else colors.dim.copy(alpha = 0.6f), lit)
-                }
-            }
-            cells.forEach { (node, cell) ->
-                val tile = cell.tile()
-                val look = when {
-                    node in controller.active -> TileLook.Running
-                    node == controller.failedNode -> TileLook.Failed
-                    !controller.running && node in controller.waitingAt -> TileLook.Waiting
-                    node in controller.visited -> TileLook.Done
-                    else -> TileLook.Idle
-                }
-                Tile(node, look, router = node in routers, Modifier.offset(tile.left.dp, tile.top.dp))
-                if (node in controller.stage.pauseBefore) {
-                    Label(
-                        "save point",
-                        Modifier.offset(tile.left.dp, (tile.top - 18).dp),
-                        color = if (look == TileLook.Waiting) colors.yellow else colors.dim,
-                    )
+    BoxWithConstraints(modifier, contentAlignment = Alignment.Center) {
+        // On a narrow screen the board is drawn smaller, so that all of it is in view. A board that is
+        // still too wide at its smallest size scrolls sideways.
+        val scale = (maxWidth.value / width).coerceIn(MIN_SCALE, 1f)
+        val density = LocalDensity.current
+        val scroll = rememberScrollState()
+        CompositionLocalProvider(LocalDensity provides Density(density.density * scale, density.fontScale)) {
+            Box(Modifier.horizontalScroll(scroll)) {
+                Box(Modifier.size(width.dp, height.dp).semantics { contentDescription = description }) {
+                    Canvas(Modifier.size(width.dp, height.dp)) {
+                        // Unlit arrows first, so that a lit one is never drawn over.
+                        edges.sortedBy { (it.from to it.to) in trail }.forEach { edge ->
+                            val lit = (edge.from to edge.to) in trail
+                            arrow(route(cells.getValue(edge.from), cells.getValue(edge.to)), if (lit) colors.ink else colors.dim.copy(alpha = 0.6f), lit)
+                        }
+                    }
+                    cells.forEach { (node, cell) ->
+                        val tile = cell.tile()
+                        val look = when {
+                            node in controller.active -> TileLook.Running
+                            node == controller.failedNode -> TileLook.Failed
+                            !controller.running && node in controller.waitingAt -> TileLook.Waiting
+                            node in controller.visited -> TileLook.Done
+                            else -> TileLook.Idle
+                        }
+                        Tile(node, look, router = node in routers, Modifier.offset(tile.left.dp, tile.top.dp))
+                        if (node in controller.stage.pauseBefore) {
+                            Label(
+                                "save point",
+                                Modifier.offset(tile.left.dp, (tile.top - 18).dp),
+                                color = if (look == TileLook.Waiting) colors.yellow else colors.dim,
+                            )
+                        }
+                    }
                 }
             }
         }
+
+        // A board that is wider than the screen fades out on the side where more of it can be scrolled into view.
+        val ground = colors.ground
+        Box(
+            Modifier.matchParentSize().drawBehind {
+                val fade = FADE.dp.toPx()
+                if (scroll.canScrollForward) {
+                    val start = size.width - fade
+                    drawRect(Brush.horizontalGradient(listOf(Color.Transparent, ground), start, size.width), Offset(start, 0f), Size(fade, size.height))
+                }
+                if (scroll.canScrollBackward) {
+                    drawRect(Brush.horizontalGradient(listOf(ground, Color.Transparent), 0f, fade), Offset.Zero, Size(fade, size.height))
+                }
+            },
+        )
     }
 }
 

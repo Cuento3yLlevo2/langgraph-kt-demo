@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.ui.Modifier
 import org.langgraphkt.demo.storage.AndroidStorage
 import org.langgraphkt.demo.ui.App
+import org.langgraphkt.demo.ui.PizzaTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -18,9 +19,12 @@ class MainActivity : ComponentActivity() {
         AndroidStorage.filesDir = filesDir
         enableEdgeToEdge()
         setContent {
-            // Keeps the game clear of the status bar, the navigation bar and the keyboard.
-            Box(Modifier.fillMaxSize().safeDrawingPadding()) {
-                App()
+            // The theme paints the game's background on the whole screen, also behind the system
+            // bars. The padding keeps the game itself clear of the bars and the keyboard.
+            PizzaTheme {
+                Box(Modifier.fillMaxSize().safeDrawingPadding()) {
+                    App()
+                }
             }
         }
     }

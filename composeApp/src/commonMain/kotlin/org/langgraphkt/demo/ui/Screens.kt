@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,6 +33,7 @@ import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.coerceAtMost
 import androidx.compose.ui.unit.dp
 import org.langgraphkt.demo.game.stages
@@ -64,7 +66,11 @@ fun TitleScreen(game: Game, modelLabel: String, onStart: () -> Unit, onOptions: 
             Spacer(Modifier.height(24.dp))
             Label("help desk", color = colors.red)
             Spacer(Modifier.height(10.dp))
-            Body("Customers write in. A graph writes back. You run the desk.", color = colors.dim)
+            BasicText(
+                "Customers write in. A graph writes back. You run the desk.",
+                Modifier.padding(horizontal = 24.dp),
+                Theme.body.copy(color = colors.dim, textAlign = TextAlign.Center),
+            )
             Spacer(Modifier.height(36.dp))
             PillButton(
                 if (game.cleared.isEmpty()) "Press start" else "Continue",
