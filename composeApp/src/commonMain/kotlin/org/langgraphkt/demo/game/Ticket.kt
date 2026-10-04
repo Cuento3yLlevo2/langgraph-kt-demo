@@ -2,8 +2,8 @@ package org.langgraphkt.demo.game
 
 import kotlinx.coroutines.delay
 import kotlinx.serialization.Serializable
-import org.langgraphkt.demo.llm.ChatMessage
-import org.langgraphkt.demo.llm.ChatModel
+import org.langgraphkt.agent.ChatMessage
+import org.langgraphkt.agent.ChatModel
 
 /**
  * The state of every stage: one customer message on its way to a reply.

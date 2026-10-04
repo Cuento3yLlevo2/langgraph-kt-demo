@@ -7,6 +7,7 @@ import org.langgraphkt.GraphResult
 import org.langgraphkt.MemoryCheckpointer
 import org.langgraphkt.NodeExecutionException
 import org.langgraphkt.START
+import org.langgraphkt.agent.ChatMessage
 import org.langgraphkt.demo.game.Agent
 import org.langgraphkt.demo.game.Desk
 import org.langgraphkt.demo.game.HelpDesks
@@ -94,7 +95,7 @@ class StagesTest {
 
         assertEquals("Hi Ana! The pizza for Ana left the oven and the driver is 5 minutes away.", ticket.reply)
         assertEquals(4, ticket.chat.size)
-        assertEquals("order_status", ticket.chat[1].toolCalls.single().name)
+        assertEquals("order_status", (ticket.chat[1] as ChatMessage.Assistant).toolCalls.single().name)
     }
 
     @Test
@@ -109,7 +110,7 @@ class StagesTest {
     fun aFailingToolIsReportedToTheModelInsteadOfFailingTheRun() = runTest {
         val ticket = Agent.graph(desk).invoke(Ticket("Cleo", "Do you sell sushi?")).state
 
-        assertTrue(ticket.chat[2].toolResults.single().isError)
+        assertTrue((ticket.chat[2] as ChatMessage.ToolResult).isError)
         assertEquals("Hi Cleo! Pixel Pizza does not sell sushi.", ticket.reply)
     }
 

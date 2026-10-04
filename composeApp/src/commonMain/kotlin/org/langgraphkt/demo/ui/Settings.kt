@@ -2,8 +2,7 @@ package org.langgraphkt.demo.ui
 
 import io.ktor.client.HttpClient
 import org.langgraphkt.demo.game.scriptedModel
-import org.langgraphkt.demo.llm.AnthropicChatModel
-import org.langgraphkt.demo.llm.ChatModel
+import org.langgraphkt.agent.ChatModel
 import org.langgraphkt.demo.llm.ClaudeModels
 import org.langgraphkt.demo.storage.KeyValueStore
 
@@ -23,7 +22,7 @@ data class Settings(
         get() = if (usesClaude) modelId else "scripted"
 
     fun chatModel(client: HttpClient): ChatModel =
-        if (usesClaude) AnthropicChatModel(client, apiKey.trim(), ClaudeModels.byId(modelId)) else scriptedModel(delayMillis = 650)
+        if (usesClaude) ClaudeModels.byId(modelId).chatModel(client, apiKey.trim()) else scriptedModel(delayMillis = 650)
 }
 
 /** Persists the settings. The API key is stored only if the user asked for it. */

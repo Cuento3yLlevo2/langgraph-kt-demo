@@ -11,6 +11,7 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.langgraphkt.CheckpointCorruptedException
 import org.langgraphkt.END
 import org.langgraphkt.GraphConfig
 import org.langgraphkt.GraphEvent
@@ -18,13 +19,13 @@ import org.langgraphkt.GraphResult
 import org.langgraphkt.GraphTopology
 import org.langgraphkt.NodeExecutionException
 import org.langgraphkt.START
+import org.langgraphkt.agent.ChatMessage
+import org.langgraphkt.agent.ChatModel
 import org.langgraphkt.demo.game.Desk
 import org.langgraphkt.demo.game.Mail
 import org.langgraphkt.demo.game.Stage
 import org.langgraphkt.demo.game.Ticket
 import org.langgraphkt.demo.game.stages
-import org.langgraphkt.demo.llm.ChatMessage
-import org.langgraphkt.demo.llm.ChatModel
 import org.langgraphkt.demo.storage.KeyValueStore
 import org.langgraphkt.demo.storage.StorageCheckpointer
 import org.langgraphkt.serialization.CheckpointCodec
@@ -185,7 +186,9 @@ class StageController(
                 throw e
             } catch (e: Exception) {
                 outcome = Phase.GameOver
-                failedNode = (e as? NodeExecutionException)?.nodeName
+                // The engine names the node when its own code throws, but passes on an exception of the
+                // library, such as a failed model call, as it is. The node that was running is the one.
+                failedNode = (e as? NodeExecutionException)?.nodeName ?: active.singleOrNull()
                 error = (if (e is NodeExecutionException) e.cause?.message else null) ?: e.message ?: e.toString()
                 log = log + LogLine("ERR", failedNode?.let { "$it: $error" } ?: error.orEmpty(), Tone.Failed)
             } finally {
@@ -234,15 +237,21 @@ class StageController(
 
     private fun leadsTo(from: String, to: String): Boolean = topology.edges.any { it.from == from && it.to == to }
 
-    private fun toolLines(message: ChatMessage): List<LogLine> =
-        message.toolCalls.map { LogLine(" >>", "${it.name} ${it.input}") } +
-            message.toolResults.map { LogLine(" <<", it.content, if (it.isError) Tone.Failed else Tone.Plain) }
+    private fun toolLines(message: ChatMessage): List<LogLine> = when (message) {
+        is ChatMessage.Assistant -> message.toolCalls.map { LogLine(" >>", "${it.name} ${it.input}") }
+        is ChatMessage.ToolResult -> listOf(LogLine(" <<", message.text, if (message.isError) Tone.Failed else Tone.Plain))
+        is ChatMessage.User -> emptyList()
+    }
 
     /** The checkpoint is the source of truth for where a run stands, also after a reload, a failure or Stop. */
     private suspend fun savedRun(): GraphResult.Interrupted<Ticket>? = try {
         graph.lastResult(config) as? GraphResult.Interrupted
     } catch (e: CancellationException) {
         throw e
+    } catch (_: CheckpointCorruptedException) {
+        // A save from an older version of the game, whose tickets looked different. It cannot be continued.
+        checkpointer.delete(threadId)
+        null
     } catch (e: Exception) {
         error = e.message
         null
