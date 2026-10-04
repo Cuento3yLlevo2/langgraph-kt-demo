@@ -4,6 +4,8 @@ A small game about graphs. You run the help desk of a pizza shop: customers writ
 [langgraph-kt](https://github.com/Cuento3yLlevo2/langgraph-kt) graph writes back, and you watch
 the ticket cross the board node by node.
 
+**[Play it in your browser](https://cuento3yllevo2.github.io/langgraph-kt-demo/)**
+
 ![Stage 8: the kitchen and the driver run at the same time](docs/stage.png)
 
 It is the [langgraph-kt tutorial](https://github.com/Cuento3yLlevo2/langgraph-kt/tree/main/docs)
@@ -32,6 +34,9 @@ board, the ticket panel and the run log are drawn from the events of `stream()` 
 | ![A run waiting at a save point](docs/save-point.png) | ![A failed node, with a retry from the last save](docs/game-over.png) |
 
 ## Play
+
+The browser version is at <https://cuento3yllevo2.github.io/langgraph-kt-demo/>. Every push to
+`main` publishes it there.
 
 To run it from a clone of this repository:
 
