@@ -33,14 +33,7 @@ board, the ticket panel and the run log are drawn from the events of `stream()` 
 
 ## Play
 
-langgraph-kt is not on Maven Central yet, so publish it to your local Maven repository first:
-
-```bash
-git clone https://github.com/Cuento3yLlevo2/langgraph-kt.git
-cd langgraph-kt && ./gradlew publishToMavenLocal
-```
-
-Then, in this repository:
+To run it from a clone of this repository:
 
 ```bash
 ./gradlew :composeApp:wasmJsBrowserDevelopmentRun   # browser, with a dev server
