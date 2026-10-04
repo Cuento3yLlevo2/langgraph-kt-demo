@@ -138,21 +138,25 @@ What the pass showed about the library:
 - **The model-specific request fields needed no library change.** `AnthropicChatModel` takes extra
   body fields and headers, which covered the effort setting, the fallback beta and the header a
   browser needs.
-- **A failed model call does not say which node failed.** The engine wraps what a node throws in
-  `NodeExecutionException`, which names the node, but it passes on an exception of the library
-  itself as it is, and `ChatModelException` is one. The game marks the failed node on the board, so
-  it now falls back to the node that was running. Wrapping `ChatModelException` like any other
-  failure of a node would make that unnecessary. Open.
-- **A conversation that starts from other fields of the state is easy to get wrong.** The ticket
+- **A failed model call did not say which node failed.** The engine wrapped what a node threw in
+  `NodeExecutionException`, which names the node, but it passed on an exception of the library
+  itself as it was, and `ChatModelException` is one. The game marks the failed node on the board, so
+  it fell back to the node that was running. Fixed in `0.1.0-alpha03`: the engine wraps every
+  exception of a node, so the failure names its node and the fallback is gone.
+- **A conversation that starts from other fields of the state was easy to get wrong.** The ticket
   holds the customer and the message, and the first user message is built from them. `toolLoop`
-  reads the conversation with `messages` and adds to it with `append`, and both must agree on that
-  first message: an `append` that adds to the stored list drops it, and nothing fails until the
-  model answers a conversation without a question. The app has one function that both call. A
-  parameter for the first message, or a note in the documentation, would help. Open.
+  reads the conversation with `messages` and adds to it with `append`, and both had to agree on
+  that first message: an `append` that added to the stored list dropped it, and nothing failed
+  until the model answered a conversation without a question. The app had one function that both
+  called. Fixed in
+  `0.1.0-alpha03`: `toolLoop` takes a `firstMessage` and stores it with the model's first answer.
+  The app's shared function is gone, and `messages` and `append` read and write one list.
 - **`toolLoop` has no place for work around the tools.** Every node of the game pretends to take a
   moment. For the tools node, the app wraps each tool. That is three lines, and fine.
-- **A text answer that was cut off is not visible to the app.** `ChatResponse.truncated` says so,
-  but `append` only receives the messages. The old client failed the run in that case. Open, minor.
+- **A text answer that was cut off was not visible to the app.** `ChatResponse.truncated` said so,
+  but `append` only receives the messages. The old client failed the run in that case. Fixed in
+  `0.1.0-alpha03`: the flag moved to the message (`ChatMessage.Assistant.truncated`), so `append`
+  sees it. The game does not use it yet; its answers are two sentences long.
 - **Changing the state's shape was handled by the existing checkpoint API.** Old saves of stage 6
   hold the conversation in the old shape. Loading one throws `CheckpointCorruptedException`, and the
   app deletes the save. No migration code was needed.

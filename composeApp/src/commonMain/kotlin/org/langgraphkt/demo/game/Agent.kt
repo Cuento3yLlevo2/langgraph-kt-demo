@@ -51,24 +51,22 @@ object Agent {
                     tool.execute(input)
                 }
             },
-            messages = ::conversation,
+            messages = { it.chat },
             append = { ticket, new ->
                 val answer = (new.lastOrNull() as? ChatMessage.Assistant)?.takeIf { it.toolCalls.isEmpty() }
                 ticket.copy(
-                    chat = conversation(ticket) + new,
+                    chat = ticket.chat + new,
                     facts = ticket.facts + new.filterIsInstance<ChatMessage.ToolResult>().map { it.text },
                     reply = answer?.text?.trim() ?: ticket.reply,
                 )
             },
+            // The conversation of a new ticket starts with the customer's message.
+            firstMessage = { "$CUSTOMER${it.customer}\n$MESSAGE${it.message}" },
             system = SYSTEM,
             modelNode = ASSISTANT,
             toolsNode = TOOLS,
         )
     }.compile()
-
-    /** The conversation of a new ticket starts with the customer's message. */
-    private fun conversation(ticket: Ticket): List<ChatMessage> =
-        ticket.chat.ifEmpty { listOf(ChatMessage.User("$CUSTOMER${ticket.customer}\n$MESSAGE${ticket.message}")) }
 
     /** The input class gives the model the schema of the tool. */
     val orderStatus: Tool = Tool<OrderLookup>(
