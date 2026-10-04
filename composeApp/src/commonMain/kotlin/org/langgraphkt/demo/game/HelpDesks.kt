@@ -5,8 +5,8 @@ import org.langgraphkt.END
 import org.langgraphkt.NodeRef
 import org.langgraphkt.START
 import org.langgraphkt.StateGraph
-import org.langgraphkt.demo.llm.ChatMessage
-import org.langgraphkt.demo.llm.ChatRequest
+import org.langgraphkt.agent.ChatMessage
+import org.langgraphkt.agent.chat
 import org.langgraphkt.demo.llm.Responder
 
 /**
@@ -205,8 +205,8 @@ object HelpDesks {
 
         // Every reply is written and checked, and rewritten if the check finds a problem.
         val write = node("write") { ticket ->
-            val reply = desk.model.chat(ChatRequest(listOf(ChatMessage.user(writerPrompt(ticket))), WRITER_SYSTEM))
-            ticket.copy(reply = reply.text.trim(), attempts = ticket.attempts + 1)
+            val reply = desk.model.chat(writerPrompt(ticket), WRITER_SYSTEM)
+            ticket.copy(reply = reply.trim(), attempts = ticket.attempts + 1)
         }
         val check = node("check") { ticket ->
             desk.work()
@@ -248,7 +248,7 @@ object HelpDesks {
         val lines = request.messages.last().text.lines()
         fun field(prefix: String) = lines.firstOrNull { it.startsWith(prefix) }?.removePrefix(prefix).orEmpty()
         val body = field(FACTS).split("; ").filter { it.isNotBlank() }.joinToString(" and ").ifEmpty { "a colleague will reply soon" }
-        ChatMessage.assistant(
+        ChatMessage.Assistant(
             if (field(FIX).isEmpty()) "${body.replaceFirstChar { it.uppercase() }}." else "Hi ${field(CUSTOMER)}, $body.",
         )
     }

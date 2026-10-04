@@ -1,5 +1,12 @@
 package org.langgraphkt.demo.llm
 
+import io.ktor.client.HttpClient
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonObject
+import org.langgraphkt.agent.ChatModel
+import org.langgraphkt.anthropic.AnthropicChatModel
+
 /**
  * A Claude model the game can be played with.
  *
@@ -16,7 +23,34 @@ data class ClaudeModel(
     val outputPrice: Int,
     val takesEffort: Boolean = true,
     val hasFallbacks: Boolean = true,
-)
+) {
+    /**
+     * This model as a [ChatModel] that sends its requests with [client].
+     *
+     * The key goes straight from the user's device to the API, which a browser is only allowed to
+     * do with the `anthropic-dangerous-direct-browser-access` header. This is acceptable here
+     * because each user supplies their own key; never ship an app with a key of yours embedded in it.
+     */
+    fun chatModel(client: HttpClient, apiKey: String): ChatModel = AnthropicChatModel(
+        client = client,
+        apiKey = apiKey,
+        model = id,
+        parameters = buildJsonObject {
+            // If a safety classifier declines the request, the API re-runs it on a fallback model.
+            if (hasFallbacks) put("fallbacks", "default")
+            if (takesEffort) putJsonObject("output_config") { put("effort", EFFORT) }
+        },
+        headers = buildMap {
+            put("anthropic-dangerous-direct-browser-access", "true")
+            if (hasFallbacks) put("anthropic-beta", FALLBACK_BETA)
+        },
+    )
+
+    private companion object {
+        const val FALLBACK_BETA = "server-side-fallback-2026-07-01"
+        const val EFFORT = "medium"
+    }
+}
 
 /** The models offered under Options. Prices are from September 2026. */
 object ClaudeModels {

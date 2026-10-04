@@ -52,6 +52,8 @@ kotlin {
         commonMain.dependencies {
             implementation(libs.langgraph.core)
             implementation(libs.langgraph.serialization)
+            implementation(libs.langgraph.agent)
+            implementation(libs.langgraph.anthropic)
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.ui)

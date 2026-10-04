@@ -5,8 +5,14 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.add
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonArray
 import org.langgraphkt.END
 import org.langgraphkt.START
+import org.langgraphkt.agent.ChatModel
+import org.langgraphkt.agent.ChatModelException
 import org.langgraphkt.demo.game.Agent
 import org.langgraphkt.demo.game.HelpDesks
 import org.langgraphkt.demo.game.Mail
@@ -170,6 +176,40 @@ class GameTest {
         assertEquals(listOf("01", " >>", "02", " <<", "03", "END"), stage.log.map { it.tag })
         assertEquals(Tone.Failed, stage.log[3].tone)
         assertTrue(Agent.TOOLS to Agent.ASSISTANT in stage.trail)
+    }
+
+    @Test
+    fun aFailedModelCallIsGameOverAtTheNodeThatAsked() = runTest {
+        val offline = ChatModel { throw ChatModelException("Could not reach the Claude API: offline") }
+        val stage = Game(offline, store, this, workMillis = 0).controller(6)
+
+        stage.play(delivery)
+        advanceUntilIdle()
+
+        assertEquals(Phase.GameOver, stage.phase)
+        assertEquals(Agent.ASSISTANT, stage.failedNode)
+        assertEquals("Could not reach the Claude API: offline", stage.error)
+    }
+
+    @Test
+    fun aSaveOfAnOlderVersionIsThrownAway() = runTest {
+        // Until the game used the library's messages, a ticket kept the model's conversation in another shape.
+        val oldTicket = """{"customer":"Ana","message":"Hi","chat":[{"role":"user","content":[{"type":"text","text":"Hi"}]}]}"""
+        val oldSave = buildJsonObject {
+            put("version", 1)
+            put("state", oldTicket)
+            putJsonArray("nextNodes") { add(Agent.ASSISTANT) }
+            put("step", 0)
+            put("interruptedBefore", false)
+        }
+        store.set("pixelpizza.save.stage-6", oldSave.toString())
+
+        val stage = game().controller(6)
+        advanceUntilIdle()
+
+        assertEquals(Phase.Ready, stage.phase)
+        assertNull(stage.error)
+        assertNull(store.get("pixelpizza.save.stage-6"))
     }
 
     @Test

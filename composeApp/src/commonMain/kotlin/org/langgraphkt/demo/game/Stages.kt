@@ -3,7 +3,7 @@ package org.langgraphkt.demo.game
 import org.langgraphkt.CompiledGraph
 import org.langgraphkt.END
 import org.langgraphkt.START
-import org.langgraphkt.demo.llm.ChatModel
+import org.langgraphkt.agent.ChatModel
 import org.langgraphkt.demo.llm.ScriptedChatModel
 
 /** Where a node sits on a stage's board: [column] from the left, [row] from the top. */

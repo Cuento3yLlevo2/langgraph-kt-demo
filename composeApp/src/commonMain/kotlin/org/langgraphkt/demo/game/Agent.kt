@@ -1,30 +1,27 @@
 package org.langgraphkt.demo.game
 
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.add
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.contentOrNull
-import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
-import kotlinx.serialization.json.putJsonArray
-import kotlinx.serialization.json.putJsonObject
 import org.langgraphkt.CompiledGraph
-import org.langgraphkt.NodeRef
 import org.langgraphkt.START
 import org.langgraphkt.StateGraph
-import org.langgraphkt.demo.llm.ChatMessage
-import org.langgraphkt.demo.llm.ChatRequest
+import org.langgraphkt.agent.ChatMessage
+import org.langgraphkt.agent.Description
+import org.langgraphkt.agent.Tool
+import org.langgraphkt.agent.ToolCall
+import org.langgraphkt.agent.toolLoop
 import org.langgraphkt.demo.llm.Responder
-import org.langgraphkt.demo.llm.ToolCall
-import org.langgraphkt.demo.llm.ToolResult
-import org.langgraphkt.demo.llm.ToolSpec
 
-/** A tool the agent can run. [run] returns the text handed back to the model. */
-class Tool(val spec: ToolSpec, val run: suspend (JsonObject) -> String)
+@Serializable
+data class OrderLookup(
+    @Description("The customer's name, for example \"Ana\"") val customer: String,
+)
+
+@Serializable
+data class MenuLookup(
+    @Description("The item, for example \"margherita\"") val item: String,
+)
 
 /** Stage 6: a model that decides by itself whether to answer or to ask a tool first. */
 object Agent {
@@ -41,60 +38,51 @@ object Agent {
 
     /**
      * The classic agent loop as a graph: the model answers or asks for tools, the tools run, and
-     * their results go back to the model until it answers in plain text.
+     * their results go back to the model until it answers in plain text. `toolLoop` adds the two
+     * nodes and the edges between them; a tool that fails reaches the model as an error result.
      */
     fun graph(desk: Desk, tools: List<Tool> = deskTools): CompiledGraph<Ticket> = StateGraph<Ticket> {
-        val assistant = node(ASSISTANT) { ticket ->
-            val chat = ticket.chat.ifEmpty { listOf(ChatMessage.user("$CUSTOMER${ticket.customer}\n$MESSAGE${ticket.message}")) }
-            val answer = desk.model.chat(ChatRequest(chat, SYSTEM, tools.map { it.spec }))
-            ticket.copy(chat = chat + answer, reply = if (answer.toolCalls.isEmpty()) answer.text.trim() else ticket.reply)
-        }
-        val runTools = node(TOOLS) { ticket ->
-            desk.work()
-            val results = coroutineScope {
-                ticket.chat.last().toolCalls.map { call -> async { runTool(tools, call) } }.awaitAll()
-            }
-            ticket.copy(chat = ticket.chat + ChatMessage.toolResults(results), facts = ticket.facts + results.map { it.content })
-        }
-
-        START then assistant
-        conditionalEdge(assistant, targets = setOf(runTools, NodeRef.END)) { ticket ->
-            if (ticket.chat.last().toolCalls.isEmpty()) NodeRef.END else runTools
-        }
-        runTools then assistant
+        START then toolLoop(
+            model = desk.model,
+            // A tool takes a moment, like every other piece of work in the game.
+            tools = tools.map { tool ->
+                Tool(tool.spec) { input ->
+                    desk.work()
+                    tool.execute(input)
+                }
+            },
+            messages = ::conversation,
+            append = { ticket, new ->
+                val answer = (new.lastOrNull() as? ChatMessage.Assistant)?.takeIf { it.toolCalls.isEmpty() }
+                ticket.copy(
+                    chat = conversation(ticket) + new,
+                    facts = ticket.facts + new.filterIsInstance<ChatMessage.ToolResult>().map { it.text },
+                    reply = answer?.text?.trim() ?: ticket.reply,
+                )
+            },
+            system = SYSTEM,
+            modelNode = ASSISTANT,
+            toolsNode = TOOLS,
+        )
     }.compile()
 
-    /** A failing tool is reported to the model as an error result instead of failing the run. */
-    private suspend fun runTool(tools: List<Tool>, call: ToolCall): ToolResult {
-        val tool = tools.firstOrNull { it.spec.name == call.name }
-            ?: return ToolResult(call.id, "Unknown tool '${call.name}'", isError = true)
-        return try {
-            ToolResult(call.id, tool.run(call.input))
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            ToolResult(call.id, e.message ?: "The tool failed", isError = true)
-        }
-    }
+    /** The conversation of a new ticket starts with the customer's message. */
+    private fun conversation(ticket: Ticket): List<ChatMessage> =
+        ticket.chat.ifEmpty { listOf(ChatMessage.User("$CUSTOMER${ticket.customer}\n$MESSAGE${ticket.message}")) }
 
-    val orderStatus: Tool = Tool(
-        ToolSpec(
-            name = "order_status",
-            description = "Returns where a customer's order is right now. The data is made up for the game.",
-            inputSchema = stringInputSchema("customer", "The customer's name, for example \"Ana\""),
-        ),
-    ) { input -> "The pizza for ${input.requireString("customer")} left the oven and the driver is 5 minutes away." }
+    /** The input class gives the model the schema of the tool. */
+    val orderStatus: Tool = Tool<OrderLookup>(
+        "order_status",
+        "Returns where a customer's order is right now. The data is made up for the game.",
+    ) { lookup -> "The pizza for ${lookup.customer} left the oven and the driver is 5 minutes away." }
 
     private val menu = mapOf("margherita" to 9, "pepperoni" to 11, "salad" to 6, "cola" to 2)
 
-    val menuPrice: Tool = Tool(
-        ToolSpec(
-            name = "menu_price",
-            description = "Returns the price of one item on the Pixel Pizza menu, or an error if we do not sell it.",
-            inputSchema = stringInputSchema("item", "The item, for example \"margherita\""),
-        ),
-    ) { input ->
-        val item = input.requireString("item").trim().lowercase()
+    val menuPrice: Tool = Tool<MenuLookup>(
+        "menu_price",
+        "Returns the price of one item on the Pixel Pizza menu, or an error if we do not sell it.",
+    ) { lookup ->
+        val item = lookup.item.trim().lowercase()
         val price = menu[item] ?: throw IllegalArgumentException("Pixel Pizza does not sell $item.")
         "One $item costs $price euros."
     }
@@ -106,9 +94,9 @@ object Agent {
         if (request.system != SYSTEM) return@Responder null
         val ticket = request.messages.first().text.lines()
         val customer = ticket.first().removePrefix(CUSTOMER)
-        val results = request.messages.last().toolResults
+        val results = request.messages.takeLastWhile { it is ChatMessage.ToolResult }
         if (results.isNotEmpty()) {
-            return@Responder ChatMessage.assistant("Hi $customer! " + results.joinToString(" ") { it.content })
+            return@Responder ChatMessage.Assistant("Hi $customer! " + results.joinToString(" ") { it.text })
         }
         val message = ticket.last().removePrefix(MESSAGE).lowercase()
         val items = (menu.keys.filter { it in message } + listOfNotNull(sells.find(message)?.groupValues?.get(1))).distinct()
@@ -121,25 +109,11 @@ object Agent {
             }
         }
         if (calls.isNotEmpty()) {
-            ChatMessage.assistantToolCalls(calls)
+            ChatMessage.Assistant(toolCalls = calls)
         } else {
-            ChatMessage.assistant("Hi $customer, thanks for writing to Pixel Pizza. A colleague will reply soon.")
+            ChatMessage.Assistant("Hi $customer, thanks for writing to Pixel Pizza. A colleague will reply soon.")
         }
     }
 
     private val sells = Regex("""sell (\p{L}+)""")
-
-    private fun stringInputSchema(property: String, description: String): JsonObject = buildJsonObject {
-        put("type", "object")
-        putJsonObject("properties") {
-            putJsonObject(property) {
-                put("type", "string")
-                put("description", description)
-            }
-        }
-        putJsonArray("required") { add(property) }
-    }
-
-    private fun JsonObject.requireString(key: String): String =
-        this[key]?.jsonPrimitive?.contentOrNull ?: throw IllegalArgumentException("Missing '$key'")
 }
