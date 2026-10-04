@@ -188,7 +188,7 @@ class StageController(
                 outcome = Phase.GameOver
                 // The engine names the node when its own code throws, but passes on an exception of the
                 // library, such as a failed model call, as it is. The node that was running is the one.
-                failedNode = (e as? NodeExecutionException)?.nodeName ?: active.singleOrNull()
+                failedNode = (e as? NodeExecutionException)?.nodeName
                 error = (if (e is NodeExecutionException) e.cause?.message else null) ?: e.message ?: e.toString()
                 log = log + LogLine("ERR", failedNode?.let { "$it: $error" } ?: error.orEmpty(), Tone.Failed)
             } finally {
