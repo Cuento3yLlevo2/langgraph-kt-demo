@@ -60,8 +60,8 @@ into the file. That is fixed in the same pull request.
   The app tells them apart by `nextNodes`, which is enough here. `Checkpoint.interruptedBefore`
   has the exact answer for an app that needs it.
 - **`START` and `END` are `__START__` and `__END__`.** The app trims the underscores for display.
-- **No model integration outside the JVM.** The Claude client here is about 100 lines of Ktor.
-  A multiplatform model module is a candidate for after the first release, not a blocker.
+- **No model integration outside the JVM.** Closed in `0.1.0-alpha02` by `langgraph-kt-agent` and
+  `langgraph-kt-anthropic`. See [The third pass](#the-third-pass-the-librarys-agent-modules).
 
 ## What worked well
 
@@ -103,3 +103,58 @@ What the rebuild showed about the library:
 - **`lastResult` after a failure says where a retry starts.** The game-over screen uses it to tell
   the player whether a retry resumes at the failed node or starts over because nothing was saved
   yet. It needed no extra bookkeeping.
+
+## The third pass: the library's agent modules
+
+`0.1.0-alpha02` added `langgraph-kt-agent` (a chat model interface, tools, a tool-calling loop) and
+`langgraph-kt-anthropic` (a Claude client on Ktor). They grew out of this app's `llm/` package, and
+this pass replaced that package with them. It was the first use of those modules from outside the
+library's repository.
+
+What changed here:
+
+- The app's own `ChatModel`, its message types and its 110-line Messages API client are gone.
+- The agent of stage 6 was two hand-written nodes, a conditional edge and a function that ran the
+  tools. It is now one call to `toolLoop`.
+- The two tools had JSON schemas written by hand and read their input from a `JsonObject`. Each is
+  now a `@Serializable` class with a `@Description`.
+- What stayed is what belongs to the game: the scripted model, and the list of Claude models with
+  the request fields each one takes.
+
+What was checked:
+
+- The 36 common tests pass on the JVM and in headless Chrome (wasmJs), and the JVM run draws every
+  screen. Gradle picked the right variant of the new modules for the browser, the desktop and
+  Android with no extra configuration.
+- A test runs the agent against a mocked Messages API and checks that Claude's thinking block goes
+  back unchanged with the tool result.
+- The Android app assembles.
+
+Not checked: a real Claude call from the game. The library's own sample was run against the real
+API, but not with the `fallbacks` and `output_config` fields the game adds.
+
+What the pass showed about the library:
+
+- **The model-specific request fields needed no library change.** `AnthropicChatModel` takes extra
+  body fields and headers, which covered the effort setting, the fallback beta and the header a
+  browser needs.
+- **A failed model call does not say which node failed.** The engine wraps what a node throws in
+  `NodeExecutionException`, which names the node, but it passes on an exception of the library
+  itself as it is, and `ChatModelException` is one. The game marks the failed node on the board, so
+  it now falls back to the node that was running. Wrapping `ChatModelException` like any other
+  failure of a node would make that unnecessary. Open.
+- **A conversation that starts from other fields of the state is easy to get wrong.** The ticket
+  holds the customer and the message, and the first user message is built from them. `toolLoop`
+  reads the conversation with `messages` and adds to it with `append`, and both must agree on that
+  first message: an `append` that adds to the stored list drops it, and nothing fails until the
+  model answers a conversation without a question. The app has one function that both call. A
+  parameter for the first message, or a note in the documentation, would help. Open.
+- **`toolLoop` has no place for work around the tools.** Every node of the game pretends to take a
+  moment. For the tools node, the app wraps each tool. That is three lines, and fine.
+- **A text answer that was cut off is not visible to the app.** `ChatResponse.truncated` says so,
+  but `append` only receives the messages. The old client failed the run in that case. Open, minor.
+- **Changing the state's shape was handled by the existing checkpoint API.** Old saves of stage 6
+  hold the conversation in the old shape. Loading one throws `CheckpointCorruptedException`, and the
+  app deletes the save. No migration code was needed.
+- **Sealed message types made the run log simpler.** One `when` over `ChatMessage` replaced two
+  lookups into raw content blocks.

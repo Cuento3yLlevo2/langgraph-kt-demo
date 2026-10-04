@@ -79,7 +79,8 @@ Requests are billed to your account.
 ## Layout
 
 - `game/`: the ticket (the state), the graphs of the stages, the tools of the agent
-- `llm/`: `ChatModel`, the Claude Messages API client (Ktor) and the scripted model
+- `llm/`: the scripted model, and the Claude models on offer. The chat model interface, the Claude
+  client and the agent loop come from `langgraph-kt-agent` and `langgraph-kt-anthropic`
 - `storage/`: `KeyValueStore` (`localStorage` in the browser, files on the desktop) and the
   `StorageCheckpointer` built on it
 - `ui/`: the screens, the board, and `Game.kt`, which runs the graphs for them
@@ -94,7 +95,7 @@ Requests are billed to your account.
 The JVM run also clicks through the game the way a player would, and draws every screen to
 `composeApp/build/screenshots`. The pictures in this README come from there.
 
-Building this app was a test of langgraph-kt before its first release. What that turned up is in
+Building this app is a test of langgraph-kt from outside its repository. What that turned up is in
 [FINDINGS.md](FINDINGS.md).
 
 ## License
