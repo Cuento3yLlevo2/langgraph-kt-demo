@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.platform.LocalUriHandler
@@ -252,7 +253,7 @@ private fun TicketSpecs(ticket: Ticket, paid: Boolean) {
 private fun LogPanel(controller: StageController, modifier: Modifier = Modifier) {
     val colors = Theme.colors
     Panel("Run log", modifier, trailing = { Label("stream()") }) {
-        if (controller.log.isEmpty()) Body("Nothing has run yet.", color = colors.dim)
+        if (controller.log.isEmpty() && controller.writing.isEmpty()) Body("Nothing has run yet.", color = colors.dim)
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             controller.log.forEach { line ->
                 val color = when (line.tone) {
@@ -261,13 +262,22 @@ private fun LogPanel(controller: StageController, modifier: Modifier = Modifier)
                     Tone.Failed -> colors.red
                     Tone.Done -> colors.ink
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Label(line.tag, Modifier.padding(top = 4.dp).width(28.dp), color = if (line.tone == Tone.Plain) colors.dim else color)
-                    Body(line.text, Modifier.weight(1f), color = color)
-                }
+                LogRow(line.tag, line.text, tagColor = if (line.tone == Tone.Plain) colors.dim else color, textColor = color)
             }
+            // The answer a model is writing right now, piece by piece as it arrives.
+            if (controller.writing.isNotEmpty()) LogRow(WRITING, "${controller.writing}_", tagColor = colors.dim, textColor = colors.dim)
         }
     }
 }
+
+@Composable
+private fun LogRow(tag: String, text: String, tagColor: Color, textColor: Color) {
+    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Label(tag, Modifier.padding(top = 4.dp).width(28.dp), color = tagColor)
+        Body(text, Modifier.weight(1f), color = textColor)
+    }
+}
+
+private const val WRITING = " .."
 
 private fun Int.twoDigits(): String = toString().padStart(2, '0')

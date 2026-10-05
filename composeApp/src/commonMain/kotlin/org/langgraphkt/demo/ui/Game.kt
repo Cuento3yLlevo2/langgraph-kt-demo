@@ -21,6 +21,7 @@ import org.langgraphkt.NodeExecutionException
 import org.langgraphkt.START
 import org.langgraphkt.agent.ChatMessage
 import org.langgraphkt.agent.ChatModel
+import org.langgraphkt.agent.textDelta
 import org.langgraphkt.demo.game.Desk
 import org.langgraphkt.demo.game.Mail
 import org.langgraphkt.demo.game.Stage
@@ -101,6 +102,10 @@ class StageController(
         private set
     var log: List<LogLine> by mutableStateOf(emptyList())
         private set
+
+    /** What a model has written so far of the answer it is working on. Empty when no model is writing. */
+    var writing: String by mutableStateOf("")
+        private set
     var step: Int by mutableStateOf(0)
         private set
 
@@ -127,6 +132,7 @@ class StageController(
         visited = setOf(START)
         trail = emptySet()
         log = emptyList()
+        writing = ""
         step = 0
         lastNodes = listOf(START)
         follow(graph.stream(ticket!!, config))
@@ -160,6 +166,7 @@ class StageController(
             trail = emptySet()
             waitingAt = emptyList()
             log = emptyList()
+            writing = ""
             step = 0
             error = null
             failedNode = null
@@ -186,13 +193,13 @@ class StageController(
                 throw e
             } catch (e: Exception) {
                 outcome = Phase.GameOver
-                // The engine names the node when its own code throws, but passes on an exception of the
-                // library, such as a failed model call, as it is. The node that was running is the one.
                 failedNode = (e as? NodeExecutionException)?.nodeName
                 error = (if (e is NodeExecutionException) e.cause?.message else null) ?: e.message ?: e.toString()
                 log = log + LogLine("ERR", failedNode?.let { "$it: $error" } ?: error.orEmpty(), Tone.Failed)
             } finally {
                 active = emptySet()
+                // Text that arrived before a failure or a stop is not an answer.
+                writing = ""
                 withContext(NonCancellable) {
                     // The saved run says where a retry would pick up, and after Stop it is all there is to go by.
                     val saved = savedPhase()
@@ -210,9 +217,13 @@ class StageController(
                 active = active + event.node
                 trail = trail + lastNodes.filter { leadsTo(it, event.node) }.map { it to event.node }
             }
+            // A model node reports each piece of text while the model writes it.
+            is GraphEvent.NodeProgress -> event.textDelta?.let { writing += it }
             is GraphEvent.NodeCompleted -> {
                 active = active - event.node
                 visited = visited + event.node
+                // The answer is in the state now.
+                writing = ""
             }
             is GraphEvent.StepCompleted -> {
                 step = event.step

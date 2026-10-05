@@ -78,7 +78,10 @@ class ScreenshotTest {
         scope.advanceUntilIdle()
         shoot("stage-5-save-point", Screen.Play(5))
 
+        // Stage 6, after the tools ran: the model is halfway through writing its answer.
         game.controller(6).play(Mail("Ben", "How much is a margherita and a cola?"))
+        scope.advanceTimeBy(2_800)
+        shoot("stage-6-writing", Screen.Play(6), height = 1100)
         scope.advanceUntilIdle()
         shoot("stage-6-clear", Screen.Play(6))
 

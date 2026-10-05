@@ -27,7 +27,8 @@ nodes to a full agent workflow. One Compose Multiplatform codebase runs it in th
 | 8 | The full desk | All of it on one board | Level 10 |
 
 Level 6 of the tutorial, watching a run with `stream()`, is not a stage. It is the game: the
-board, the ticket panel and the run log are drawn from the events of `stream()` as they arrive.
+board, the ticket panel and the run log are drawn from the events of `stream()` as they arrive. In
+the stages that ask a model, the run log shows the answer word by word while the model writes it.
 
 | | |
 |---|---|

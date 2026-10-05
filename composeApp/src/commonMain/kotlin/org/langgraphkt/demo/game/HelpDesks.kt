@@ -6,7 +6,7 @@ import org.langgraphkt.NodeRef
 import org.langgraphkt.START
 import org.langgraphkt.StateGraph
 import org.langgraphkt.agent.ChatMessage
-import org.langgraphkt.agent.chat
+import org.langgraphkt.agent.chatWithProgress
 import org.langgraphkt.demo.llm.Responder
 
 /**
@@ -205,7 +205,8 @@ object HelpDesks {
 
         // Every reply is written and checked, and rewritten if the check finds a problem.
         val write = node("write") { ticket ->
-            val reply = desk.model.chat(writerPrompt(ticket), WRITER_SYSTEM)
+            // In a run that is watched, the model streams and the run log shows the reply while it is written.
+            val reply = desk.model.chatWithProgress(writerPrompt(ticket), WRITER_SYSTEM)
             ticket.copy(reply = reply.trim(), attempts = ticket.attempts + 1)
         }
         val check = node("check") { ticket ->
