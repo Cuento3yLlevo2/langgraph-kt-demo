@@ -13,6 +13,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -23,6 +24,7 @@ import org.langgraphkt.agent.ChatMessage
 import org.langgraphkt.agent.ChatModel
 import org.langgraphkt.agent.ChatModelException
 import org.langgraphkt.agent.ChatRequest
+import org.langgraphkt.agent.textDelta
 import org.langgraphkt.demo.game.Agent
 import org.langgraphkt.demo.game.Desk
 import org.langgraphkt.demo.game.Ticket
@@ -115,6 +117,29 @@ class ClaudeModelsTest {
             """[{"type":"tool_result","tool_use_id":"toolu_1","content":"One cola costs 2 euros."}]""",
             turns[2].jsonObject["content"].toString(),
         )
+    }
+
+    @Test
+    fun theAgentStreamsClaudesAnswerWhenTheRunIsWatched() = runTest {
+        fun event(data: String) = "event: message\ndata: $data\n\n"
+        val stream =
+            event("""{"type":"message_start","message":{"content":[],"usage":{"input_tokens":9,"output_tokens":1}}}""") +
+                event("""{"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}""") +
+                event("""{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"Hi Ana! "}}""") +
+                event("""{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"We open at noon."}}""") +
+                event("""{"type":"content_block_stop","index":0}""") +
+                event("""{"type":"message_delta","delta":{"stop_reason":"end_turn"},"usage":{"output_tokens":8}}""") +
+                event("""{"type":"message_stop"}""")
+        val model = model(HttpStatusCode.OK to stream)
+
+        val events = Agent.graph(Desk(model)).stream(Ticket("Ana", "When do you open?")).toList()
+
+        assertEquals(listOf("Hi Ana! ", "We open at noon."), events.mapNotNull { it.textDelta })
+        assertEquals("Hi Ana! We open at noon.", events.last().state.reply)
+        // The fields the game adds for the chosen model travel with a streamed request too.
+        assertEquals("true", sentBody()["stream"]!!.jsonPrimitive.content)
+        assertEquals("default", sentBody()["fallbacks"]!!.jsonPrimitive.content)
+        assertEquals("true", sent.single().headers["anthropic-dangerous-direct-browser-access"])
     }
 
     @Test

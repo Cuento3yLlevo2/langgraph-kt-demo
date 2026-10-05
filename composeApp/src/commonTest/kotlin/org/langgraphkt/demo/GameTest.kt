@@ -167,6 +167,40 @@ class GameTest {
     }
 
     @Test
+    fun aModelsAnswerShowsWhileItIsWritten() = runTest {
+        val stage = game().controller(6)
+
+        stage.play(Mail("Dee", "Hello there!"))
+        // The scripted model thinks for half a second and then writes for half a second.
+        advanceTimeBy(800)
+
+        assertEquals(setOf(Agent.ASSISTANT), stage.active)
+        assertTrue(stage.writing.startsWith("Hi Dee, "))
+        assertTrue(stage.writing.length < "Hi Dee, thanks for writing to Pixel Pizza. A colleague will reply soon.".length)
+        assertEquals("", stage.ticket?.reply)
+
+        advanceUntilIdle()
+
+        assertEquals("", stage.writing)
+        assertEquals("Hi Dee, thanks for writing to Pixel Pizza. A colleague will reply soon.", stage.ticket?.reply)
+    }
+
+    @Test
+    fun textThatArrivedBeforeAStopIsThrownAway() = runTest {
+        val stage = game().controller(6)
+
+        stage.play(Mail("Dee", "Hello there!"))
+        advanceTimeBy(800)
+        assertTrue(stage.writing.isNotEmpty())
+
+        stage.stop()
+        advanceUntilIdle()
+
+        assertEquals("", stage.writing)
+        assertEquals(Phase.Unfinished, stage.phase)
+    }
+
+    @Test
     fun theAgentsToolCallsAndResultsAreLogged() = runTest {
         val stage = game().controller(6)
 
