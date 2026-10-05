@@ -37,9 +37,9 @@ private val tutorialPages = mapOf(
     4 to "04-loops.md",
     5 to "05-parallel.md",
     7 to "07-save-points.md",
-    8 to "08-a-real-ai-model.md",
-    9 to "09-game-over-screens.md",
-    10 to "10-your-own-workflow.md",
+    9 to "09-an-agent-with-tools.md",
+    10 to "10-game-over-screens.md",
+    11 to "11-your-own-workflow.md",
 )
 
 /** One stage: its briefing, the board, the inbox to play from, and the ticket and log of the current run. */
