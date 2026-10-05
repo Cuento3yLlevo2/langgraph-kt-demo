@@ -85,6 +85,9 @@ kotlin {
         }
         jvmMain.get().dependsOn(jvmAndAndroidMain)
         androidMain.get().dependsOn(jvmAndAndroidMain)
+        jvmAndAndroidMain.dependencies {
+            implementation(libs.langgraph.checkpoint.file)
+        }
 
         commonMain {
             kotlin.srcDir(embedStageSources.flatMap { it.output })
@@ -120,6 +123,7 @@ kotlin {
             implementation(libs.ktor.client.okhttp)
         }
         wasmJsMain.dependencies {
+            implementation(libs.langgraph.checkpoint.browser)
             implementation(libs.ktor.client.js)
         }
     }

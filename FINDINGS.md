@@ -204,3 +204,38 @@ What the pass showed about the library:
   writes a sentence before a tool call. The game shows it while it arrives and drops it when the
   node finishes, because the ticket only keeps the final reply. The message with that text is still
   in the conversation. Fine for the game; an app that wants to keep it reads it from there.
+
+## The fifth pass: checkpointers from the library
+
+The game had a checkpointer of its own, `StorageCheckpointer`, because the library had none for a
+browser. The library now has `LocalStorageCheckpointer` in `langgraph-kt-checkpoint-browser`. This
+pass tried it in the game before the release, against a build of the library from its repository.
+
+What changed here:
+
+- The browser build saves its runs with `LocalStorageCheckpointer`, and the desktop and Android
+  builds with `FileCheckpointer`. `StorageCheckpointer` and its tests are gone.
+- `Game` takes a `Checkpointer`. One `expect` function, `platformCheckpointer()`, picks it.
+
+What was checked:
+
+- 47 tests pass on the JVM and 44 in headless Chrome (wasmJs). In the browser, a stage that pauses
+  in one `Game` waits at its save point in the next, through the real `localStorage`. On the JVM
+  the same holds through a file.
+- The browser bundle and the Android app build.
+
+Not checked: the hosted game in a real browser after the change, and the Android app on a device.
+
+What the pass showed:
+
+- **A save in the browser from before the change is still read.** The new checkpointer was given
+  the prefix the game already used, and the format of an entry is the library's own, so the keys
+  and their contents are the same.
+- **On the desktop and on Android a saved run is lost once.** The files have another name and
+  place than before. For a game that is acceptable.
+- **A test cannot leave a damaged save behind through `MemoryCheckpointer`.** It keeps objects, not
+  text. The test that covers a save of an older version of the game has a small checkpointer that
+  keeps the text `CheckpointCodec` writes. The codec made that a dozen lines.
+- **A file is written on a real thread.** The game starts a run in the background, and a test
+  that then calls `advanceUntilIdle()` gets ahead of the file. The test with `FileCheckpointer`
+  waits in real time for the stage to reach its save point.

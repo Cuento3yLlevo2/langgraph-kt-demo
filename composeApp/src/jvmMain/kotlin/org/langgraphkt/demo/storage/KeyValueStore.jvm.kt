@@ -1,5 +1,11 @@
 package org.langgraphkt.demo.storage
 
+import org.langgraphkt.Checkpointer
+import org.langgraphkt.demo.game.Ticket
 import java.io.File
 
-actual fun platformStore(): KeyValueStore = FileStore(File(System.getProperty("user.home"), ".langgraph-kt-demo"))
+private val home = File(System.getProperty("user.home"), ".langgraph-kt-demo")
+
+actual fun platformStore(): KeyValueStore = FileStore(home)
+
+actual fun platformCheckpointer(): Checkpointer<Ticket> = fileCheckpointer(File(home, "saves"))

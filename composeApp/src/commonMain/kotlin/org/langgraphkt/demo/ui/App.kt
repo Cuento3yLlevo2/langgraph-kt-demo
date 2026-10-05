@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import io.ktor.client.HttpClient
 import kotlinx.coroutines.launch
 import org.langgraphkt.demo.game.stages
+import org.langgraphkt.demo.storage.platformCheckpointer
 import org.langgraphkt.demo.storage.platformStore
 
 /** Where the player is. */
@@ -48,6 +49,7 @@ val LocalCompact = staticCompositionLocalOf { false }
 fun App() {
     val scope = rememberCoroutineScope()
     val store = remember { platformStore() }
+    val saves = remember { platformCheckpointer() }
     val repository = remember { SettingsRepository(store) }
     val httpClient = remember { HttpClient() }
     var loaded by remember { mutableStateOf<Settings?>(null) }
@@ -58,7 +60,7 @@ fun App() {
         val settings = loaded ?: return@PizzaTheme
         // New settings mean a new model, and with it fresh graphs. Cleared stages and saved runs are kept.
         val model = remember(settings) { settings.chatModel(httpClient) }
-        val game = remember(model) { Game(model, store, scope) }
+        val game = remember(model) { Game(model, store, saves, scope) }
         GameScreens(game, settings, screen, onNavigate = { screen = it }) { updated ->
             loaded = updated
             scope.launch { repository.save(updated) }

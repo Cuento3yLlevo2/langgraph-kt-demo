@@ -1,41 +1,47 @@
 package org.langgraphkt.demo
 
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
-import org.langgraphkt.GraphConfig
-import org.langgraphkt.GraphResult
-import org.langgraphkt.demo.game.Desk
-import org.langgraphkt.demo.game.HelpDesks
-import org.langgraphkt.demo.game.Ticket
+import org.langgraphkt.demo.game.Mail
 import org.langgraphkt.demo.game.scriptedModel
-import org.langgraphkt.demo.storage.LocalStorageStore
-import org.langgraphkt.demo.storage.StorageCheckpointer
-import org.langgraphkt.serialization.CheckpointCodec
+import org.langgraphkt.demo.storage.MemoryStore
+import org.langgraphkt.demo.storage.platformCheckpointer
+import org.langgraphkt.demo.ui.Game
+import org.langgraphkt.demo.ui.Phase
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertIs
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
-/** Runs in a real browser: the paused run lives in `localStorage` between two separate sessions. */
+/** Runs in a real browser: a paused stage lives in `localStorage` between two sessions of the game. */
+@OptIn(ExperimentalCoroutinesApi::class)
 class LocalStorageCheckpointTest {
-    private fun config() = GraphConfig(
-        threadId = "browser-test",
-        checkpointer = StorageCheckpointer(LocalStorageStore(), CheckpointCodec<Ticket>()),
-        interruptBefore = setOf(HelpDesks.PAY),
-    )
-
-    private fun graph() = HelpDesks.savePoints(Desk(scriptedModel()))
+    /** A game as the page creates it: with the checkpointer of the browser. Each call is a reload. */
+    private fun TestScope.game() = Game(scriptedModel(), MemoryStore(), platformCheckpointer(), this, workMillis = 0)
 
     @Test
-    fun aRunPausedInLocalStorageIsResumedByANewSession() = runTest {
-        val paused = graph().invoke(Ticket("Ben", "I want a refund"), config())
-        assertIs<GraphResult.Interrupted<Ticket>>(paused)
+    fun aStagePausedInOneSessionWaitsInTheNext() = runTest {
+        game().controller(5).play(Mail("Ben", "My pizza arrived cold. I want a refund."))
+        advanceUntilIdle()
 
-        val config = config()
-        assertEquals(listOf(HelpDesks.PAY), config.checkpointer!!.load("browser-test")!!.nextNodes)
-        val done = graph().resume(config) { it.copy(approved = true) }
+        val reloaded = game().controller(5)
+        advanceUntilIdle()
+        assertEquals(Phase.SavePoint, reloaded.phase)
+        assertTrue(reloaded.restored)
+        assertEquals(12, reloaded.ticket?.refund)
 
-        assertEquals("Sorry Ben! We sent you 12 euros.", done.state.reply)
-        config.checkpointer!!.delete("browser-test")
-        assertNull(config.checkpointer!!.load("browser-test"))
+        reloaded.decide(approved = true)
+        advanceUntilIdle()
+        assertEquals("Sorry Ben! We sent you 12 euros.", reloaded.ticket?.reply)
+
+        // The run is finished, so the save is gone and the next session starts with an empty desk.
+        reloaded.reset()
+        advanceUntilIdle()
+        val afterwards = game().controller(5)
+        advanceUntilIdle()
+        assertEquals(Phase.Ready, afterwards.phase)
+        assertNull(afterwards.ticket)
     }
 }

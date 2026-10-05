@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.langgraphkt.CheckpointCorruptedException
+import org.langgraphkt.Checkpointer
 import org.langgraphkt.END
 import org.langgraphkt.GraphConfig
 import org.langgraphkt.GraphEvent
@@ -28,8 +29,6 @@ import org.langgraphkt.demo.game.Stage
 import org.langgraphkt.demo.game.Ticket
 import org.langgraphkt.demo.game.stages
 import org.langgraphkt.demo.storage.KeyValueStore
-import org.langgraphkt.demo.storage.StorageCheckpointer
-import org.langgraphkt.serialization.CheckpointCodec
 
 enum class Phase {
     /** Nothing in progress. */
@@ -58,12 +57,11 @@ data class LogLine(val tag: String, val text: String, val tone: Tone = Tone.Plai
 class StageController(
     val stage: Stage,
     desk: Desk,
-    store: KeyValueStore,
+    private val checkpointer: Checkpointer<Ticket>,
     private val scope: CoroutineScope,
     private val onClear: (Stage) -> Unit = {},
 ) {
     private val graph = stage.graph(desk)
-    private val checkpointer = StorageCheckpointer(store, CheckpointCodec<Ticket>(), keyPrefix = "pixelpizza.save.")
     private val threadId = "stage-${stage.number}"
     private val config = GraphConfig(threadId = threadId, checkpointer = checkpointer, interruptBefore = stage.pauseBefore)
 
@@ -289,12 +287,23 @@ class StageController(
     }
 }
 
-/** The whole game: one controller per stage, and which stages the player has cleared. */
-class Game(model: ChatModel, private val store: KeyValueStore, private val scope: CoroutineScope, workMillis: Long = 650) {
+/**
+ * The whole game: one controller per stage, and which stages the player has cleared.
+ *
+ * @param store remembers the cleared stages.
+ * @param saves keeps the runs of the stages, so that one that paused is still there in the next session.
+ */
+class Game(
+    model: ChatModel,
+    private val store: KeyValueStore,
+    saves: Checkpointer<Ticket>,
+    private val scope: CoroutineScope,
+    workMillis: Long = 650,
+) {
     var cleared: Set<Int> by mutableStateOf(emptySet())
         private set
 
-    val controllers: List<StageController> = stages.map { StageController(it, Desk(model, workMillis), store, scope, ::markCleared) }
+    val controllers: List<StageController> = stages.map { StageController(it, Desk(model, workMillis), saves, scope, ::markCleared) }
 
     init {
         scope.launch {
