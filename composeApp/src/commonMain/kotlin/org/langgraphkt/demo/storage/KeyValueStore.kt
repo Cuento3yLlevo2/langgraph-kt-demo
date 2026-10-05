@@ -3,7 +3,7 @@ package org.langgraphkt.demo.storage
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-/** Small persistent string storage: `localStorage` in the browser, files on the desktop. */
+/** Small persistent string storage for the settings and the cleared stages: `localStorage` in the browser, files elsewhere. */
 interface KeyValueStore {
     suspend fun get(key: String): String?
 

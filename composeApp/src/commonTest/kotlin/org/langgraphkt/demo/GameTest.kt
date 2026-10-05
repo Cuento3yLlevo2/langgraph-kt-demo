@@ -9,6 +9,8 @@ import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
+import org.langgraphkt.Checkpoint
+import org.langgraphkt.Checkpointer
 import org.langgraphkt.END
 import org.langgraphkt.START
 import org.langgraphkt.agent.ChatModel
@@ -16,11 +18,13 @@ import org.langgraphkt.agent.ChatModelException
 import org.langgraphkt.demo.game.Agent
 import org.langgraphkt.demo.game.HelpDesks
 import org.langgraphkt.demo.game.Mail
+import org.langgraphkt.demo.game.Ticket
 import org.langgraphkt.demo.game.scriptedModel
 import org.langgraphkt.demo.storage.MemoryStore
 import org.langgraphkt.demo.ui.Game
 import org.langgraphkt.demo.ui.Phase
 import org.langgraphkt.demo.ui.Tone
+import org.langgraphkt.serialization.CheckpointCodec
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -31,11 +35,12 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalCoroutinesApi::class)
 class GameTest {
     private val store = MemoryStore()
+    private val saves = TextSaves()
     private val delivery = Mail("Ana", "Where is my pizza?")
     private val refund = Mail("Ben", "My pizza arrived cold. I want a refund.")
 
     /** A game whose nodes each take a second, so a test can look at a run halfway. */
-    private fun TestScope.game(workMillis: Long = 1_000) = Game(scriptedModel(delayMillis = workMillis), store, this, workMillis)
+    private fun TestScope.game(workMillis: Long = 1_000) = Game(scriptedModel(delayMillis = workMillis), store, saves, this, workMillis)
 
     @Test
     fun aRunLightsItsPathAndClearsTheStage() = runTest {
@@ -215,7 +220,7 @@ class GameTest {
     @Test
     fun aFailedModelCallIsGameOverAtTheNodeThatAsked() = runTest {
         val offline = ChatModel { throw ChatModelException("Could not reach the Claude API: offline") }
-        val stage = Game(offline, store, this, workMillis = 0).controller(6)
+        val stage = Game(offline, store, saves, this, workMillis = 0).controller(6)
 
         stage.play(delivery)
         advanceUntilIdle()
@@ -236,14 +241,14 @@ class GameTest {
             put("step", 0)
             put("interruptedBefore", false)
         }
-        store.set("pixelpizza.save.stage-6", oldSave.toString())
+        saves.text["stage-6"] = oldSave.toString()
 
         val stage = game().controller(6)
         advanceUntilIdle()
 
         assertEquals(Phase.Ready, stage.phase)
         assertNull(stage.error)
-        assertNull(store.get("pixelpizza.save.stage-6"))
+        assertNull(saves.text["stage-6"])
     }
 
     @Test
@@ -277,5 +282,24 @@ class GameTest {
         advanceUntilIdle()
 
         assertEquals(emptySet(), game().also { advanceUntilIdle() }.cleared)
+    }
+}
+
+/**
+ * Keeps each run as the text that the library's checkpointers write to a file or to `localStorage`,
+ * so a test can leave a save of an older version of the game behind.
+ */
+private class TextSaves : Checkpointer<Ticket> {
+    val text = mutableMapOf<String, String>()
+    private val codec = CheckpointCodec<Ticket>()
+
+    override suspend fun save(threadId: String, checkpoint: Checkpoint<Ticket>) {
+        text[threadId] = codec.encode(checkpoint)
+    }
+
+    override suspend fun load(threadId: String): Checkpoint<Ticket>? = text[threadId]?.let { codec.decode(threadId, it) }
+
+    override suspend fun delete(threadId: String) {
+        text.remove(threadId)
     }
 }

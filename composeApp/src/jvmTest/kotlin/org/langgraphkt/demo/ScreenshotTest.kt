@@ -9,6 +9,7 @@ import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import org.jetbrains.skia.EncodedImageFormat
 import org.langgraphkt.demo.game.Mail
+import org.langgraphkt.MemoryCheckpointer
 import org.langgraphkt.demo.game.scriptedModel
 import org.langgraphkt.demo.storage.MemoryStore
 import org.langgraphkt.demo.ui.Game
@@ -28,7 +29,7 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalCoroutinesApi::class)
 class ScreenshotTest {
     private val scope = TestScope()
-    private val game = Game(scriptedModel(delayMillis = 1_000), MemoryStore(), scope, workMillis = 1_000)
+    private val game = Game(scriptedModel(delayMillis = 1_000), MemoryStore(), MemoryCheckpointer(), scope, workMillis = 1_000)
     private val delivery = Mail("Ana", "Where is my pizza?")
     private val refund = Mail("Ben", "My pizza arrived cold. I want a refund.")
 

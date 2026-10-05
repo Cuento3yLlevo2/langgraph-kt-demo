@@ -13,6 +13,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.v2.runComposeUiTest
+import org.langgraphkt.MemoryCheckpointer
 import org.langgraphkt.demo.game.scriptedModel
 import org.langgraphkt.demo.storage.MemoryStore
 import org.langgraphkt.demo.ui.Game
@@ -32,7 +33,7 @@ class PlayThroughTest {
         lateinit var game: Game
         setContent {
             val scope = rememberCoroutineScope()
-            game = remember { Game(scriptedModel(), MemoryStore(), scope, workMillis = 0) }
+            game = remember { Game(scriptedModel(), MemoryStore(), MemoryCheckpointer(), scope, workMillis = 0) }
             var screen by remember { mutableStateOf<Screen>(Screen.Title) }
             PizzaTheme(dark = true) { GameScreens(game, Settings(), screen, onNavigate = { screen = it }, onSave = {}) }
         }
@@ -57,7 +58,7 @@ class PlayThroughTest {
     fun aPlayerPressesATileToSeeTheCodeOfItsNode() = runComposeUiTest {
         setContent {
             val scope = rememberCoroutineScope()
-            val game = remember { Game(scriptedModel(), MemoryStore(), scope, workMillis = 0) }
+            val game = remember { Game(scriptedModel(), MemoryStore(), MemoryCheckpointer(), scope, workMillis = 0) }
             PizzaTheme(dark = true) { GameScreens(game, Settings(), Screen.Play(1), onNavigate = {}, onSave = {}) }
         }
 
