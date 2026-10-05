@@ -32,6 +32,10 @@ Watching a run with `stream()`, the second half of level 4, is not only in stage
 the board, the ticket panel and the run log are drawn from the events of `stream()` as they arrive.
 In the stages that ask a model, the run log shows the answer word by word while the model writes it.
 
+Press a tile on the board to see the code behind it: the node, its arrows and the functions it calls.
+The text is cut out of the game's own source files when the app is built, so it is always the code
+that runs.
+
 | | |
 |---|---|
 | ![A run waiting at a save point](docs/save-point.png) | ![A failed node, with a retry from the last save](docs/game-over.png) |
