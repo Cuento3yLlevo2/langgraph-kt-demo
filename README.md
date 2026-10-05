@@ -22,9 +22,9 @@ nodes to a full agent workflow. One Compose Multiplatform codebase runs it in th
 | 3 | Loops | An edge that goes back until the reply passes a check | Level 4 |
 | 4 | Two at once | Fan-out to nodes with a `work` and an `update`, which run at the same time | Level 5 |
 | 5 | Save points | `interruptBefore` stops the run for you; `resume` continues it, also after a reload | Level 7 |
-| 6 | The agent | A model that calls tools, as a loop of two nodes | Level 8 |
-| 7 | Game over | A node fails; `resume` retries from the last save | Level 9 |
-| 8 | The full desk | All of it on one board | Level 10 |
+| 6 | The agent | A model that calls tools, as a loop of two nodes | Level 9 |
+| 7 | Game over | A node fails; `resume` retries from the last save | Level 10 |
+| 8 | The full desk | All of it on one board | Level 11 |
 
 Level 6 of the tutorial, watching a run with `stream()`, is not a stage. It is the game: the
 board, the ticket panel and the run log are drawn from the events of `stream()` as they arrive. In

@@ -115,7 +115,7 @@ val stages: List<Stage> = listOf(
         moves = "a model / tools / a loop",
         briefing = "No keywords this time. A model reads the ticket and decides by itself: answer now, or ask a " +
             "tool first. Two nodes and a loop are the whole agent.",
-        tutorial = 8,
+        tutorial = 9,
         inbox = listOf(delivery, Mail("Ben", "How much is a margherita and a cola?"), Mail("Cleo", "Do you sell sushi?")),
         board = mapOf(
             START to Cell(0, 0),
@@ -132,7 +132,7 @@ val stages: List<Stage> = listOf(
         moves = "a failed node / resume",
         briefing = "The kitchen phone is busy and the run fails. Nothing is lost: every finished step was " +
             "saved, so a retry starts at the node that failed, not at the beginning.",
-        tutorial = 9,
+        tutorial = 10,
         inbox = listOf(delivery),
         board = row("greet", HelpDesks.KITCHEN),
         graph = { desk -> HelpDesks.gameOver(desk) },
@@ -143,7 +143,7 @@ val stages: List<Stage> = listOf(
         moves = "every move on one board",
         briefing = "A choice, two lookups at once, a loop that rewrites, and a save point before the money moves. " +
             "Three tickets, three ways through.",
-        tutorial = 10,
+        tutorial = 11,
         inbox = listOf(delivery, refund, salad),
         board = mapOf(
             START to Cell(0, 2),
