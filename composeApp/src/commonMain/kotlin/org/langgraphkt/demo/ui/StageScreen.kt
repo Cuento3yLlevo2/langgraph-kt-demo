@@ -31,15 +31,17 @@ import org.langgraphkt.demo.game.Ticket
 import org.langgraphkt.demo.game.stages
 
 private const val TUTORIAL = "https://github.com/Cuento3yLlevo2/langgraph-kt/blob/main/docs/"
+
+/** The page of each stage's level: stage 3 is level 3 of the tutorial. */
 private val tutorialPages = mapOf(
-    2 to "02-a-line-of-nodes.md",
-    3 to "03-choices.md",
-    4 to "04-loops.md",
-    5 to "05-parallel.md",
-    7 to "07-save-points.md",
-    9 to "09-an-agent-with-tools.md",
-    10 to "10-game-over-screens.md",
-    11 to "11-your-own-workflow.md",
+    1 to "01-a-line-of-nodes.md",
+    2 to "02-choices.md",
+    3 to "03-loops.md",
+    4 to "04-two-things-at-once.md",
+    5 to "05-save-points.md",
+    6 to "06-the-agent.md",
+    7 to "07-game-over-screens.md",
+    8 to "08-your-own-workflow.md",
 )
 
 /** One stage: its briefing, the board, the inbox to play from, and the ticket and log of the current run. */
@@ -84,8 +86,8 @@ private fun Briefing(stage: Stage, modelLabel: String, onStages: () -> Unit) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             PillButton("< All stages", onStages, Modifier.offset(x = (-10).dp), emphasis = Emphasis.Quiet)
             PillButton(
-                "Tutorial level ${stage.tutorial}",
-                onClick = { uriHandler.openUri(TUTORIAL + tutorialPages.getValue(stage.tutorial)) },
+                "Tutorial level ${stage.number}",
+                onClick = { uriHandler.openUri(TUTORIAL + tutorialPages.getValue(stage.number)) },
                 modifier = Modifier.offset(x = 10.dp),
                 emphasis = Emphasis.Quiet,
             )

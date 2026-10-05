@@ -13,7 +13,6 @@ data class Cell(val column: Int, val row: Int)
  * One stage of the game: a help desk that knows one move more than the stage before.
  *
  * @property moves the library features the stage introduces.
- * @property tutorial the level of the langgraph-kt tutorial that explains the move.
  * @property board where each node of the graph is drawn. The arrows come from the graph itself.
  * @property pauseBefore the nodes the run stops before, to wait for the player.
  * @property usesModel whether a node asks the chat model.
@@ -23,7 +22,6 @@ class Stage(
     val title: String,
     val moves: String,
     val briefing: String,
-    val tutorial: Int,
     val inbox: List<Mail>,
     val board: Map<String, Cell>,
     val pauseBefore: Set<String> = emptySet(),
@@ -46,7 +44,6 @@ val stages: List<Stage> = listOf(
         moves = "node / then / invoke",
         briefing = "Two nodes in a row. READ works out what the customer wants, ANSWER writes the reply. " +
             "Each one gets the ticket, adds to it and hands it on.",
-        tutorial = 2,
         inbox = listOf(delivery, refund, salad),
         board = row("read", "answer"),
         graph = HelpDesks::line,
@@ -57,7 +54,6 @@ val stages: List<Stage> = listOf(
         moves = "conditionalEdge",
         briefing = "One reply does not fit every customer. After READ, a conditional edge looks at the topic " +
             "and picks one of three paths. Send each ticket and watch where it goes.",
-        tutorial = 3,
         inbox = listOf(delivery, refund, salad),
         board = mapOf(
             START to Cell(0, 1),
@@ -75,7 +71,6 @@ val stages: List<Stage> = listOf(
         moves = "an edge that goes back",
         briefing = "The writer is sloppy. CHECK sends the reply back to WRITE until it says sorry and uses " +
             "the customer's name. After ${HelpDesks.LOOP_ATTEMPTS} attempts it goes out anyway: every loop needs a limit.",
-        tutorial = 4,
         inbox = listOf(Mail("Ana", "My pizza is late!"), Mail("Ben", "Still no pizza. It has been an hour.")),
         board = row("write", "check"),
         graph = HelpDesks::loops,
@@ -86,7 +81,6 @@ val stages: List<Stage> = listOf(
         moves = "fan-out / work and update",
         briefing = "Asking the kitchen and the driver one after the other is slow, so both run in the same step. " +
             "Their work happens at the same time, and each then writes its fact into the ticket, one after the other.",
-        tutorial = 5,
         inbox = listOf(delivery, Mail("Ben", "Is my order close?")),
         board = mapOf(
             START to Cell(0, 1),
@@ -103,7 +97,6 @@ val stages: List<Stage> = listOf(
         moves = "interruptBefore / resume",
         briefing = "Money is about to move, so the run stops before PAY and waits for you. It is saved: " +
             "reload the page or close the app, and the ticket is still waiting for your decision.",
-        tutorial = 7,
         inbox = listOf(refund, Mail("Cleo", "Wrong toppings again. Refund, please.")),
         board = row("prepare", HelpDesks.PAY),
         pauseBefore = setOf(HelpDesks.PAY),
@@ -115,7 +108,6 @@ val stages: List<Stage> = listOf(
         moves = "a model / tools / a loop",
         briefing = "No keywords this time. A model reads the ticket and decides by itself: answer now, or ask a " +
             "tool first. Two nodes and a loop are the whole agent.",
-        tutorial = 9,
         inbox = listOf(delivery, Mail("Ben", "How much is a margherita and a cola?"), Mail("Cleo", "Do you sell sushi?")),
         board = mapOf(
             START to Cell(0, 0),
@@ -132,7 +124,6 @@ val stages: List<Stage> = listOf(
         moves = "a failed node / resume",
         briefing = "The kitchen phone is busy and the run fails. Nothing is lost: every finished step was " +
             "saved, so a retry starts at the node that failed, not at the beginning.",
-        tutorial = 10,
         inbox = listOf(delivery),
         board = row("greet", HelpDesks.KITCHEN),
         graph = { desk -> HelpDesks.gameOver(desk) },
@@ -143,7 +134,6 @@ val stages: List<Stage> = listOf(
         moves = "every move on one board",
         briefing = "A choice, two lookups at once, a loop that rewrites, and a save point before the money moves. " +
             "Three tickets, three ways through.",
-        tutorial = 11,
         inbox = listOf(delivery, refund, salad),
         board = mapOf(
             START to Cell(0, 2),

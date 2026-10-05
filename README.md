@@ -15,20 +15,22 @@ nodes to a full agent workflow. One Compose Multiplatform codebase runs it in th
 
 ## Stages
 
-| # | Stage | The move | Tutorial |
-|---|---|---|---|
-| 1 | A line | Two nodes in a row: `node`, `then`, `invoke` | Level 2 |
-| 2 | Choices | `conditionalEdge` picks one of three paths | Level 3 |
-| 3 | Loops | An edge that goes back until the reply passes a check | Level 4 |
-| 4 | Two at once | Fan-out to nodes with a `work` and an `update`, which run at the same time | Level 5 |
-| 5 | Save points | `interruptBefore` stops the run for you; `resume` continues it, also after a reload | Level 7 |
-| 6 | The agent | A model that calls tools, as a loop of two nodes | Level 9 |
-| 7 | Game over | A node fails; `resume` retries from the last save | Level 10 |
-| 8 | The full desk | All of it on one board | Level 11 |
+| # | Stage | The move |
+|---|---|---|
+| 1 | A line | Two nodes in a row: `node`, `then`, `invoke` |
+| 2 | Choices | `conditionalEdge` picks one of three paths |
+| 3 | Loops | An edge that goes back until the reply passes a check |
+| 4 | Two at once | Fan-out to nodes with a `work` and an `update`, which run at the same time |
+| 5 | Save points | `interruptBefore` stops the run for you; `resume` continues it, also after a reload |
+| 6 | The agent | A model that calls tools, as a loop of two nodes |
+| 7 | Game over | A node fails; `resume` retries from the last save |
+| 8 | The full desk | All of it on one board |
 
-Level 6 of the tutorial, watching a run with `stream()`, is not a stage. It is the game: the
-board, the ticket panel and the run log are drawn from the events of `stream()` as they arrive. In
-the stages that ask a model, the run log shows the answer word by word while the model writes it.
+Each stage is the level of the tutorial with the same number: stage 3 is level 3.
+
+Watching a run with `stream()`, the second half of level 4, is not only in stage 4. It is the game:
+the board, the ticket panel and the run log are drawn from the events of `stream()` as they arrive.
+In the stages that ask a model, the run log shows the answer word by word while the model writes it.
 
 | | |
 |---|---|
