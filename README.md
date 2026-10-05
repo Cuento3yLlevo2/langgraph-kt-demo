@@ -72,11 +72,10 @@ Requests are billed to your account.
 - **The board draws the graph it is given.** Tiles sit where the stage puts them. The arrows are
   read from `CompiledGraph.topology`, and they light up from the `NodeStarted`, `NodeCompleted` and
   `StepCompleted` events of the run.
-- **A save point is a checkpoint.** Runs are saved through a `Checkpointer` built on
-  `CheckpointCodec`, into `localStorage` in the browser and into files on the desktop and on
-  Android. That is why
-  a ticket waiting for your decision survives a reload, and why a failed run can be retried from
-  the node that failed.
+- **A save point is a checkpoint.** Runs are saved by the library's checkpointers:
+  `LocalStorageCheckpointer` in the browser, `FileCheckpointer` on the desktop and on Android. That
+  is why a ticket waiting for your decision survives a reload, and why a failed run can be retried
+  from the node that failed.
 - **The look is drawn, not themed.** Black, white, a ramp of greys and one red, after
   [nothing.tech](https://nothing.tech). The headings are a 5 by 7 dot-matrix alphabet in
   [`ui/DotMatrix.kt`](composeApp/src/commonMain/kotlin/org/langgraphkt/demo/ui/DotMatrix.kt), the
@@ -88,8 +87,8 @@ Requests are billed to your account.
 - `game/`: the ticket (the state), the graphs of the stages, the tools of the agent
 - `llm/`: the scripted model, and the Claude models on offer. The chat model interface, the Claude
   client and the agent loop come from `langgraph-kt-agent` and `langgraph-kt-anthropic`
-- `storage/`: `KeyValueStore` (`localStorage` in the browser, files on the desktop) and the
-  `StorageCheckpointer` built on it
+- `storage/`: which checkpointer of the library each platform uses, and `KeyValueStore` for the
+  settings and the cleared stages
 - `ui/`: the screens, the board, and `Game.kt`, which runs the graphs for them
 
 ## Tests
