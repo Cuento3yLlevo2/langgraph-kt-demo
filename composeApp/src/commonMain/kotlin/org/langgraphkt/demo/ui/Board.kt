@@ -3,6 +3,7 @@ package org.langgraphkt.demo.ui
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,7 +28,10 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Density
@@ -85,9 +89,12 @@ internal fun route(from: Cell, to: Cell): List<Offset> {
 /**
  * The stage's graph as a game board. Tiles are placed by the stage, arrows are read from the
  * graph's topology, and both light up as the run moves.
+ *
+ * A tile can be pressed. [selected] is the node whose tile is marked, and [onSelect] is called with
+ * the node of the tile that was pressed.
  */
 @Composable
-fun Board(controller: StageController, modifier: Modifier = Modifier) {
+fun Board(controller: StageController, modifier: Modifier = Modifier, selected: String? = null, onSelect: (String) -> Unit = {}) {
     val colors = Theme.colors
     val cells = controller.stage.board
     val edges = controller.topology.edges.filter { it.from in cells && it.to in cells }
@@ -124,7 +131,7 @@ fun Board(controller: StageController, modifier: Modifier = Modifier) {
                             node in controller.visited -> TileLook.Done
                             else -> TileLook.Idle
                         }
-                        Tile(node, look, router = node in routers, Modifier.offset(tile.left.dp, tile.top.dp))
+                        Tile(node, look, router = node in routers, selected = node == selected, onClick = { onSelect(node) }, Modifier.offset(tile.left.dp, tile.top.dp))
                         if (node in controller.stage.pauseBefore) {
                             Label(
                                 "save point",
@@ -189,7 +196,7 @@ private fun DrawScope.arrow(corners: List<Offset>, color: Color, lit: Boolean) {
 }
 
 @Composable
-private fun Tile(node: String, look: TileLook, router: Boolean, modifier: Modifier = Modifier) {
+private fun Tile(node: String, look: TileLook, router: Boolean, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val colors = Theme.colors
     // START and END are "__START__" and "__END__" in the library.
     val terminal = node == START || node == END
@@ -213,7 +220,10 @@ private fun Tile(node: String, look: TileLook, router: Boolean, modifier: Modifi
             .size(TILE_WIDTH.dp, TILE_HEIGHT.dp)
             .alpha(if (look == TileLook.Waiting) waiting.coerceAtLeast(0.45f) else 1f)
             .background(if (look == TileLook.Running) colors.red else colors.ground, shape)
-            .border(1.dp, edge, shape),
+            // The tile whose code is shown has a heavier frame.
+            .border(if (selected) 2.dp else 1.dp, if (selected) colors.ink else edge, shape)
+            .pointerHoverIcon(PointerIcon.Hand)
+            .clickable(onClickLabel = "Show the code", role = Role.Button, onClick = onClick),
         horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically,
     ) {

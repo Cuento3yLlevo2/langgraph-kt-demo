@@ -7,6 +7,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -50,5 +51,28 @@ class PlayThroughTest {
 
         onNodeWithText("NEXT STAGE").performClick()
         onNodeWithContentDescription("The agent").assertIsDisplayed()
+    }
+
+    @Test
+    fun aPlayerPressesATileToSeeTheCodeOfItsNode() = runComposeUiTest {
+        setContent {
+            val scope = rememberCoroutineScope()
+            val game = remember { Game(scriptedModel(), MemoryStore(), scope, workMillis = 0) }
+            PizzaTheme(dark = true) { GameScreens(game, Settings(), Screen.Play(1), onNavigate = {}, onSave = {}) }
+        }
+
+        onNodeWithText("PRESS A TILE TO SEE ITS CODE").assertIsDisplayed()
+        onNodeWithText("READ").performClick()
+
+        onNodeWithText("CODE OF READ").assertIsDisplayed()
+        onNodeWithText("START then read then answer then END").assertIsDisplayed()
+        onNodeWithText("fun topicOf(message: String)", substring = true).assertIsDisplayed()
+
+        // Another tile replaces the code, and the same tile again puts it away.
+        onNodeWithText("ANSWER").performClick()
+        onNodeWithText("CODE OF ANSWER").assertIsDisplayed()
+        onNodeWithText("ANSWER").performClick()
+        assertEquals(0, onAllNodesWithText("CODE OF ANSWER").fetchSemanticsNodes().size)
+        onNodeWithText("PRESS A TILE TO SEE ITS CODE").assertIsDisplayed()
     }
 }

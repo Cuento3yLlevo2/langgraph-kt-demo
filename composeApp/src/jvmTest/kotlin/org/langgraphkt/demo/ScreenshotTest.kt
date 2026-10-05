@@ -90,6 +90,14 @@ class ScreenshotTest {
         shoot("stage-7-game-over", Screen.Play(7))
 
         shoot("stage-2-ready", Screen.Play(2), dark = false)
+
+        // A tile was pressed: its code is shown under the board.
+        game.controller(2).toggleCode("read")
+        shoot("stage-2-code", Screen.Play(2), height = 1500, dark = false)
+        game.controller(6).toggleCode("tools")
+        shoot("stage-6-code", Screen.Play(6), height = 1900)
+        game.controller(4).toggleCode("kitchen")
+        shoot("stage-4-code-phone", Screen.Play(4), width = 390, height = 1700)
         shoot("stages", Screen.Stages)
         shoot("stages-phone", Screen.Stages, width = 390, height = 1100)
         shoot("options", Screen.Options)

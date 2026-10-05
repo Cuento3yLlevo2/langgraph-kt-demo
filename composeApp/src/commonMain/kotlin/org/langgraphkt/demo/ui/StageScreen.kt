@@ -2,7 +2,9 @@ package org.langgraphkt.demo.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -10,6 +12,10 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -23,7 +29,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import org.langgraphkt.demo.game.HelpDesks
 import org.langgraphkt.demo.game.Mail
 import org.langgraphkt.demo.game.Stage
@@ -58,8 +69,11 @@ fun StageScreen(controller: StageController, modelLabel: String, onStages: () ->
         trailing = { Label(if (controller.step > 0) "step ${controller.step.toString().padStart(2, '0')}" else "ready") },
         padding = 0.dp,
     ) {
-        Board(controller, Modifier.fillMaxWidth().dotGrid(Theme.colors.line))
+        Board(controller, Modifier.fillMaxWidth().dotGrid(Theme.colors.line), selected = controller.codeOf, onSelect = controller::toggleCode)
+        if (controller.codeOf == null) Label("press a tile to see its code", Modifier.padding(start = 14.dp, bottom = 10.dp))
     }
+
+    controller.codeOf?.let { node -> CodePanel(stage, node, onClose = controller::closeCode) }
 
     if (!controller.running) Outcome(controller, onStages, onNext)
 
@@ -101,6 +115,55 @@ private fun Briefing(stage: Stage, modelLabel: String, onStages: () -> Unit) {
         }
     }
 }
+
+/** The code behind the tile the player pressed: the node, its arrows and the functions it calls. */
+@Composable
+private fun CodePanel(stage: Stage, node: String, onClose: () -> Unit) {
+    val parts = remember(stage, node) { stage.code.of(node) }
+    Panel(
+        "Code of ${node.trim('_')}",
+        Modifier.fillMaxWidth(),
+        trailing = {
+            Label("close x", Modifier.pointerHoverIcon(PointerIcon.Hand).clickable(role = Role.Button, onClick = onClose))
+        },
+    ) {
+        parts.forEach { part ->
+            Label(part.title)
+            Code(part.code)
+        }
+        if (parts.any { GAME_PAUSE in it.code }) {
+            Body("$GAME_PAUSE is only for the game: it makes a node take a moment, so that you can watch it run.", color = Theme.colors.dim)
+        }
+    }
+}
+
+/** A block of source code. It keeps its line breaks and scrolls sideways when a line is too long. */
+@Composable
+private fun Code(code: String) {
+    val colors = Theme.colors
+    val text = remember(code, colors) {
+        buildAnnotatedString {
+            code.lines().forEachIndexed { index, line ->
+                if (index > 0) append('\n')
+                val comment = line.trimStart().let { it.startsWith("//") || it.startsWith("/*") || it.startsWith("*") }
+                if (comment) withStyle(SpanStyle(color = colors.dim)) { append(line) } else append(line)
+            }
+        }
+    }
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .background(colors.panel, RoundedCornerShape(4.dp))
+            .horizontalScroll(rememberScrollState())
+            .padding(12.dp),
+    ) {
+        SelectionContainer {
+            BasicText(text, style = Theme.body.copy(color = colors.ink, fontSize = 13.sp, lineHeight = 19.sp), softWrap = false)
+        }
+    }
+}
+
+private const val GAME_PAUSE = "desk.work()"
 
 @Composable
 private fun Fact(name: String, value: String) {

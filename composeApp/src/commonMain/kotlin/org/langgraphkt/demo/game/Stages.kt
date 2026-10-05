@@ -16,6 +16,7 @@ data class Cell(val column: Int, val row: Int)
  * @property board where each node of the graph is drawn. The arrows come from the graph itself.
  * @property pauseBefore the nodes the run stops before, to wait for the player.
  * @property usesModel whether a node asks the chat model.
+ * @property function the name of the function that builds the graph, to find its source by.
  */
 class Stage(
     val number: Int,
@@ -26,8 +27,12 @@ class Stage(
     val board: Map<String, Cell>,
     val pauseBefore: Set<String> = emptySet(),
     val usesModel: Boolean = false,
+    val function: String,
     val graph: (Desk) -> CompiledGraph<Ticket>,
-)
+) {
+    /** The code behind the tiles of the board. */
+    val code: StageCode by lazy { StageCode(function, stageSources.values) }
+}
 
 private val delivery = Mail("Ana", "Where is my pizza?")
 private val refund = Mail("Ben", "My pizza arrived cold. I want a refund.")
@@ -46,6 +51,7 @@ val stages: List<Stage> = listOf(
             "Each one gets the ticket, adds to it and hands it on.",
         inbox = listOf(delivery, refund, salad),
         board = row("read", "answer"),
+        function = "line",
         graph = HelpDesks::line,
     ),
     Stage(
@@ -63,6 +69,7 @@ val stages: List<Stage> = listOf(
             "answer" to Cell(2, 2),
             END to Cell(3, 1),
         ),
+        function = "choices",
         graph = HelpDesks::choices,
     ),
     Stage(
@@ -73,6 +80,7 @@ val stages: List<Stage> = listOf(
             "the customer's name. After ${HelpDesks.LOOP_ATTEMPTS} attempts it goes out anyway: every loop needs a limit.",
         inbox = listOf(Mail("Ana", "My pizza is late!"), Mail("Ben", "Still no pizza. It has been an hour.")),
         board = row("write", "check"),
+        function = "loops",
         graph = HelpDesks::loops,
     ),
     Stage(
@@ -89,6 +97,7 @@ val stages: List<Stage> = listOf(
             "answer" to Cell(2, 1),
             END to Cell(3, 1),
         ),
+        function = "parallel",
         graph = HelpDesks::parallel,
     ),
     Stage(
@@ -100,6 +109,7 @@ val stages: List<Stage> = listOf(
         inbox = listOf(refund, Mail("Cleo", "Wrong toppings again. Refund, please.")),
         board = row("prepare", HelpDesks.PAY),
         pauseBefore = setOf(HelpDesks.PAY),
+        function = "savePoints",
         graph = HelpDesks::savePoints,
     ),
     Stage(
@@ -116,6 +126,7 @@ val stages: List<Stage> = listOf(
             END to Cell(3, 0),
         ),
         usesModel = true,
+        function = "graph",
         graph = { desk -> Agent.graph(desk) },
     ),
     Stage(
@@ -126,6 +137,7 @@ val stages: List<Stage> = listOf(
             "saved, so a retry starts at the node that failed, not at the beginning.",
         inbox = listOf(delivery),
         board = row("greet", HelpDesks.KITCHEN),
+        function = "gameOver",
         graph = { desk -> HelpDesks.gameOver(desk) },
     ),
     Stage(
@@ -149,6 +161,7 @@ val stages: List<Stage> = listOf(
         ),
         pauseBefore = setOf(HelpDesks.PAY),
         usesModel = true,
+        function = "fullDesk",
         graph = HelpDesks::fullDesk,
     ),
 )
