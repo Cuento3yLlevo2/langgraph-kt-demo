@@ -106,6 +106,19 @@ class StageController(
     /** What a model has written so far of the answer it is working on. Empty when no model is writing. */
     var writing: String by mutableStateOf("")
         private set
+
+    /** The node whose code is shown under the board, after the player pressed its tile. */
+    var codeOf: String? by mutableStateOf(null)
+        private set
+
+    /** Shows the code of [node], or puts it away when it is the one already shown. */
+    fun toggleCode(node: String) {
+        codeOf = if (codeOf == node) null else node
+    }
+
+    fun closeCode() {
+        codeOf = null
+    }
     var step: Int by mutableStateOf(0)
         private set
 
