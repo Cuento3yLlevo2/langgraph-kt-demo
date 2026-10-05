@@ -162,3 +162,45 @@ What the pass showed about the library:
   app deletes the save. No migration code was needed.
 - **Sealed message types made the run log simpler.** One `when` over `ChatMessage` replaced two
   lookups into raw content blocks.
+
+## The fourth pass: streaming
+
+`0.1.0-alpha04` lets a model's answer arrive piece by piece. This pass tried it in the game before
+the release, against a build of the library from its repository, and again with the release from
+Maven Central.
+
+What changed here:
+
+- The run log shows the answer a model is writing, word by word, in the stages that ask a model (6
+  and 8). When the node finishes, the line goes away and the answer is in the ticket.
+- The scripted model writes word by word too, so the game shows this without an API key.
+
+What was checked:
+
+- 40 tests pass on the JVM and 39 in headless Chrome (wasmJs). Three are new on both: the text shows
+  while a model writes, it is thrown away when the player presses Stop, and a run against a mocked
+  Messages API streams with the fields the game adds for the chosen model.
+- A probe in headless Chrome asked a local stand-in for the API that sends four pieces 200 ms apart.
+  They arrived at 5, 203, 406 and 605 ms, so the browser client delivers the pieces as they come
+  and does not wait for the end. The probe is not part of the suite, because it needs that server.
+- The library's sample streamed from the real API on the JVM.
+
+Not checked: a real Claude call from the game in a browser, with streaming.
+
+What the pass showed about the library:
+
+- **The agent needed no change.** Stage 6 is a `toolLoop`, and it streams by itself when the run is
+  collected with `stream()`, which the game always does.
+- **A node of the app's own needed one word.** The writer of stage 8 called `chat(prompt, system)`.
+  It now calls `chatWithProgress(prompt, system)`. The first version of that function only took a
+  `ChatRequest`; the overload with a prompt was added to the library because of this node.
+- **The new event broke one `when`.** The game matches on every kind of `GraphEvent` without an
+  `else`, so it did not compile until it had a branch for `NodeProgress`. That is what a sealed type
+  is for, and the changelog says so.
+- **A stand-in model streams by overriding one function.** `ChatModel.stream` has a default that
+  delivers the answer in one piece, and the scripted model replaces it with one that writes word by
+  word.
+- **Text that arrives before the model asks for a tool has no place in the state.** Claude sometimes
+  writes a sentence before a tool call. The game shows it while it arrives and drops it when the
+  node finishes, because the ticket only keeps the final reply. The message with that text is still
+  in the conversation. Fine for the game; an app that wants to keep it reads it from there.
