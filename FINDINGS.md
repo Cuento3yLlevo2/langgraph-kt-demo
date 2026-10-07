@@ -30,7 +30,7 @@ window (only the browser build was clicked through), and any browser other than 
 ## Gaps found, now closed in the library
 
 The first version of this app needed three workarounds. All three were fixed in langgraph-kt by
-[pull request 7](https://github.com/Cuento3yLlevo2/langgraph-kt/pull/7), which is merged, and the
+[pull request 7](https://github.com/deeptelar/telar/pull/7), which is merged, and the
 app uses the new APIs instead.
 
 | Gap | Workaround the app had | Library fix |

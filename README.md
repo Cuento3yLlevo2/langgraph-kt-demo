@@ -1,14 +1,14 @@
 # Pixel Pizza
 
 A small game about graphs. You run the help desk of a pizza shop: customers write in, a
-[langgraph-kt](https://github.com/Cuento3yLlevo2/langgraph-kt) graph writes back, and you watch
+[langgraph-kt](https://github.com/deeptelar/telar) graph writes back, and you watch
 the ticket cross the board node by node.
 
-**[Play it in your browser](https://cuento3yllevo2.github.io/langgraph-kt-demo/)**
+**[Play it in your browser](https://deeptelar.github.io/telar-demo/)**
 
 ![Stage 8: the kitchen and the driver run at the same time](docs/stage.png)
 
-It is the [langgraph-kt tutorial](https://github.com/Cuento3yLlevo2/langgraph-kt/tree/main/docs)
+It is the [langgraph-kt tutorial](https://github.com/deeptelar/telar/tree/main/docs)
 made playable. Eight stages, one new move each, the same Pixel Pizza help desk growing from two
 nodes to a full agent workflow. One Compose Multiplatform codebase runs it in the browser
 (Kotlin/Wasm), on the desktop (JVM) and on Android. No account and no API key needed.
@@ -42,7 +42,7 @@ that runs.
 
 ## Play
 
-The browser version is at <https://cuento3yllevo2.github.io/langgraph-kt-demo/>. Every push to
+The browser version is at <https://deeptelar.github.io/telar-demo/>. Every push to
 `main` publishes it there.
 
 To run it from a clone of this repository:
