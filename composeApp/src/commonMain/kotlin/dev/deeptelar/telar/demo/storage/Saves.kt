@@ -1,0 +1,10 @@
+package dev.deeptelar.telar.demo.storage
+
+import dev.deeptelar.telar.Checkpointer
+import dev.deeptelar.telar.demo.game.Ticket
+
+/**
+ * Where this platform keeps the runs of the stages: the library's `LocalStorageCheckpointer` in the
+ * browser, and its `FileCheckpointer` on the desktop and on Android.
+ */
+expect fun platformCheckpointer(): Checkpointer<Ticket>

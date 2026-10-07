@@ -65,9 +65,9 @@ Requests are billed to your account.
 
 ## How it works
 
-- **A stage is a graph and a map.** [`game/HelpDesks.kt`](composeApp/src/commonMain/kotlin/org/langgraphkt/demo/game/HelpDesks.kt)
-  and [`game/Agent.kt`](composeApp/src/commonMain/kotlin/org/langgraphkt/demo/game/Agent.kt) hold
-  the eight graphs. [`game/Stages.kt`](composeApp/src/commonMain/kotlin/org/langgraphkt/demo/game/Stages.kt)
+- **A stage is a graph and a map.** [`game/HelpDesks.kt`](composeApp/src/commonMain/kotlin/dev/deeptelar/telar/demo/game/HelpDesks.kt)
+  and [`game/Agent.kt`](composeApp/src/commonMain/kotlin/dev/deeptelar/telar/demo/game/Agent.kt) hold
+  the eight graphs. [`game/Stages.kt`](composeApp/src/commonMain/kotlin/dev/deeptelar/telar/demo/game/Stages.kt)
   gives each one its briefing, its inbox, and the cell of every node on the board.
 - **The board draws the graph it is given.** Tiles sit where the stage puts them. The arrows are
   read from `CompiledGraph.topology`, and they light up from the `NodeStarted`, `NodeCompleted` and
@@ -78,8 +78,8 @@ Requests are billed to your account.
   from the node that failed.
 - **The look is drawn, not themed.** Black, white, a ramp of greys and one red, after
   [nothing.tech](https://nothing.tech). The headings are a 5 by 7 dot-matrix alphabet in
-  [`ui/DotMatrix.kt`](composeApp/src/commonMain/kotlin/org/langgraphkt/demo/ui/DotMatrix.kt), the
-  pizza is text in [`ui/Sprites.kt`](composeApp/src/commonMain/kotlin/org/langgraphkt/demo/ui/Sprites.kt),
+  [`ui/DotMatrix.kt`](composeApp/src/commonMain/kotlin/dev/deeptelar/telar/demo/ui/DotMatrix.kt), the
+  pizza is text in [`ui/Sprites.kt`](composeApp/src/commonMain/kotlin/dev/deeptelar/telar/demo/ui/Sprites.kt),
   and the rest is Geist Mono. There is no Material in the app.
 
 ## Layout
