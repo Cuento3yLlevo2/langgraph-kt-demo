@@ -4,7 +4,7 @@ import dev.deeptelar.telar.Checkpointer
 import dev.deeptelar.telar.demo.game.Ticket
 import java.io.File
 
-private val home = File(System.getProperty("user.home"), ".langgraph-kt-demo")
+private val home = File(System.getProperty("user.home"), ".telar-demo")
 
 actual fun platformStore(): KeyValueStore = FileStore(home)
 

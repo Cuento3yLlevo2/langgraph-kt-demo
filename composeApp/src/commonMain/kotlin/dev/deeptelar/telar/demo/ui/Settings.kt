@@ -45,8 +45,8 @@ class SettingsRepository(private val store: KeyValueStore) {
     }
 
     private companion object {
-        const val MODE = "langgraph.demo.mode"
-        const val MODEL = "langgraph.demo.model"
-        const val API_KEY = "langgraph.demo.apiKey"
+        const val MODE = "pixelpizza.mode"
+        const val MODEL = "pixelpizza.model"
+        const val API_KEY = "pixelpizza.apiKey"
     }
 }
