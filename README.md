@@ -1,14 +1,14 @@
 # Pixel Pizza
 
 A small game about graphs. You run the help desk of a pizza shop: customers write in, a
-[langgraph-kt](https://github.com/deeptelar/telar) graph writes back, and you watch
+[Telar](https://github.com/deeptelar/telar) graph writes back, and you watch
 the ticket cross the board node by node.
 
 **[Play it in your browser](https://deeptelar.github.io/telar-demo/)**
 
 ![Stage 8: the kitchen and the driver run at the same time](docs/stage.png)
 
-It is the [langgraph-kt tutorial](https://github.com/deeptelar/telar/tree/main/docs)
+It is the [Telar tutorial](https://github.com/deeptelar/telar/tree/main/docs)
 made playable. Eight stages, one new move each, the same Pixel Pizza help desk growing from two
 nodes to a full agent workflow. One Compose Multiplatform codebase runs it in the browser
 (Kotlin/Wasm), on the desktop (JVM) and on Android. No account and no API key needed.
@@ -65,9 +65,9 @@ Requests are billed to your account.
 
 ## How it works
 
-- **A stage is a graph and a map.** [`game/HelpDesks.kt`](composeApp/src/commonMain/kotlin/org/langgraphkt/demo/game/HelpDesks.kt)
-  and [`game/Agent.kt`](composeApp/src/commonMain/kotlin/org/langgraphkt/demo/game/Agent.kt) hold
-  the eight graphs. [`game/Stages.kt`](composeApp/src/commonMain/kotlin/org/langgraphkt/demo/game/Stages.kt)
+- **A stage is a graph and a map.** [`game/HelpDesks.kt`](composeApp/src/commonMain/kotlin/dev/deeptelar/telar/demo/game/HelpDesks.kt)
+  and [`game/Agent.kt`](composeApp/src/commonMain/kotlin/dev/deeptelar/telar/demo/game/Agent.kt) hold
+  the eight graphs. [`game/Stages.kt`](composeApp/src/commonMain/kotlin/dev/deeptelar/telar/demo/game/Stages.kt)
   gives each one its briefing, its inbox, and the cell of every node on the board.
 - **The board draws the graph it is given.** Tiles sit where the stage puts them. The arrows are
   read from `CompiledGraph.topology`, and they light up from the `NodeStarted`, `NodeCompleted` and
@@ -78,15 +78,15 @@ Requests are billed to your account.
   from the node that failed.
 - **The look is drawn, not themed.** Black, white, a ramp of greys and one red, after
   [nothing.tech](https://nothing.tech). The headings are a 5 by 7 dot-matrix alphabet in
-  [`ui/DotMatrix.kt`](composeApp/src/commonMain/kotlin/org/langgraphkt/demo/ui/DotMatrix.kt), the
-  pizza is text in [`ui/Sprites.kt`](composeApp/src/commonMain/kotlin/org/langgraphkt/demo/ui/Sprites.kt),
+  [`ui/DotMatrix.kt`](composeApp/src/commonMain/kotlin/dev/deeptelar/telar/demo/ui/DotMatrix.kt), the
+  pizza is text in [`ui/Sprites.kt`](composeApp/src/commonMain/kotlin/dev/deeptelar/telar/demo/ui/Sprites.kt),
   and the rest is Geist Mono. There is no Material in the app.
 
 ## Layout
 
 - `game/`: the ticket (the state), the graphs of the stages, the tools of the agent
 - `llm/`: the scripted model, and the Claude models on offer. The chat model interface, the Claude
-  client and the agent loop come from `langgraph-kt-agent` and `langgraph-kt-anthropic`
+  client and the agent loop come from `telar-agent` and `telar-anthropic`
 - `storage/`: which checkpointer of the library each platform uses, and `KeyValueStore` for the
   settings and the cleared stages
 - `ui/`: the screens, the board, and `Game.kt`, which runs the graphs for them
@@ -101,7 +101,7 @@ Requests are billed to your account.
 The JVM run also clicks through the game the way a player would, and draws every screen to
 `composeApp/build/screenshots`. The pictures in this README come from there.
 
-Building this app is a test of langgraph-kt from outside its repository. What that turned up is in
+Building this app is a test of Telar from outside its repository. What that turned up is in
 [FINDINGS.md](FINDINGS.md).
 
 ## License

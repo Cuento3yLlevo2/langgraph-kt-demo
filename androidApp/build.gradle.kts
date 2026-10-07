@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "org.langgraphkt.demo.android"
+    namespace = "dev.deeptelar.telar.demo.android"
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "org.langgraphkt.demo"
+        applicationId = "dev.deeptelar.telar.demo"
         minSdk = 24
         targetSdk = 37
         versionCode = 1

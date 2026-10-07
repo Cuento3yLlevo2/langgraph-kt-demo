@@ -1,7 +1,8 @@
-# Findings for langgraph-kt
+# Findings for Telar
 
-What building this app showed about langgraph-kt `0.1.0-SNAPSHOT` (October 2026). The app uses
-the library only through its published artifacts.
+What building this app showed about [Telar](https://github.com/deeptelar/telar), starting with
+`0.1.0-SNAPSHOT` in October 2026. The app uses the library only through its published artifacts.
+Until `0.1.0-alpha05` the library was called langgraph-kt; this file uses its current names.
 
 The app was built twice. The first version had three separate screens: a tool agent, an email
 approval flow and a parallel research run. The second version is the game in this repository,
@@ -29,7 +30,7 @@ window (only the browser build was clicked through), and any browser other than 
 
 ## Gaps found, now closed in the library
 
-The first version of this app needed three workarounds. All three were fixed in langgraph-kt by
+The first version of this app needed three workarounds. All three were fixed in Telar by
 [pull request 7](https://github.com/deeptelar/telar/pull/7), which is merged, and the
 app uses the new APIs instead.
 
@@ -60,8 +61,8 @@ into the file. That is fixed in the same pull request.
   The app tells them apart by `nextNodes`, which is enough here. `Checkpoint.interruptedBefore`
   has the exact answer for an app that needs it.
 - **`START` and `END` are `__START__` and `__END__`.** The app trims the underscores for display.
-- **No model integration outside the JVM.** Closed in `0.1.0-alpha02` by `langgraph-kt-agent` and
-  `langgraph-kt-anthropic`. See [The third pass](#the-third-pass-the-librarys-agent-modules).
+- **No model integration outside the JVM.** Closed in `0.1.0-alpha02` by `telar-agent` and
+  `telar-anthropic`. See [The third pass](#the-third-pass-the-librarys-agent-modules).
 
 ## What worked well
 
@@ -106,8 +107,8 @@ What the rebuild showed about the library:
 
 ## The third pass: the library's agent modules
 
-`0.1.0-alpha02` added `langgraph-kt-agent` (a chat model interface, tools, a tool-calling loop) and
-`langgraph-kt-anthropic` (a Claude client on Ktor). They grew out of this app's `llm/` package, and
+`0.1.0-alpha02` added `telar-agent` (a chat model interface, tools, a tool-calling loop) and
+`telar-anthropic` (a Claude client on Ktor). They grew out of this app's `llm/` package, and
 this pass replaced that package with them. It was the first use of those modules from outside the
 library's repository.
 
@@ -208,7 +209,7 @@ What the pass showed about the library:
 ## The fifth pass: checkpointers from the library
 
 The game had a checkpointer of its own, `StorageCheckpointer`, because the library had none for a
-browser. The library now has `LocalStorageCheckpointer` in `langgraph-kt-checkpoint-browser`. This
+browser. The library now has `LocalStorageCheckpointer` in `telar-checkpoint-browser`. This
 pass tried it in the game before the release, against a build of the library from its repository.
 
 What changed here:
@@ -239,3 +240,35 @@ What the pass showed:
 - **A file is written on a real thread.** The game starts a run in the background, and a test
   that then calls `advanceUntilIdle()` gets ahead of the file. The test with `FileCheckpointer`
   waits in real time for the stage to reach its save point.
+
+## The sixth pass: the library's new name
+
+`0.1.0-alpha06` is the first release as Telar: the artifacts are `dev.deeptelar:telar-*` and the
+package is `dev.deeptelar.telar`. This pass moved the game to it, with the release from Maven
+Central.
+
+What changed here:
+
+- The six dependencies have the new coordinates, and the imports the new package. Nothing else in
+  the code that uses the library changed.
+- The app's own package is `dev.deeptelar.telar.demo`, and it says "built with Telar".
+- The settings are stored under `pixelpizza.*`, and the desktop app keeps its files in
+  `~/.telar-demo`.
+
+What was checked:
+
+- 47 tests pass on the JVM and 44 in headless Chrome (wasmJs), the same as before the move.
+- The browser bundle and the Android app build.
+
+Not checked: the hosted game in a real browser after the change, and the Android app on a device.
+
+What the pass showed:
+
+- **The changelog's steps were the whole move.** New coordinates and one replacement of the package
+  name in the imports, and the app compiled for all three targets. The game does not catch the
+  renamed base exception, and it gives `LocalStorageCheckpointer` its own prefix, so the other two
+  steps did not apply.
+- **What was stored is not carried over.** The settings have new names and the desktop app a new
+  folder, so both start empty. In the browser the runs keep their prefix, but the game has a new
+  address, and a browser has nothing stored for it yet.
+- **On Android the game is a new app.** The application id follows the package.

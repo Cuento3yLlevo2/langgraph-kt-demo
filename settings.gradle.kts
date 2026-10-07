@@ -13,7 +13,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "langgraph-kt-demo"
+rootProject.name = "telar-demo"
 
 include(":composeApp")
 include(":androidApp")
