@@ -10,7 +10,7 @@ import dev.deeptelar.telar.agent.chatWithProgress
 import dev.deeptelar.telar.demo.llm.Responder
 
 /**
- * The graphs of the stages, one function each. They are the help desks of the langgraph-kt
+ * The graphs of the stages, one function each. They are the help desks of the Telar
  * tutorial: every stage adds one move to the one before.
  */
 object HelpDesks {

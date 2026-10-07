@@ -1,14 +1,14 @@
 # Pixel Pizza
 
 A small game about graphs. You run the help desk of a pizza shop: customers write in, a
-[langgraph-kt](https://github.com/deeptelar/telar) graph writes back, and you watch
+[Telar](https://github.com/deeptelar/telar) graph writes back, and you watch
 the ticket cross the board node by node.
 
 **[Play it in your browser](https://deeptelar.github.io/telar-demo/)**
 
 ![Stage 8: the kitchen and the driver run at the same time](docs/stage.png)
 
-It is the [langgraph-kt tutorial](https://github.com/deeptelar/telar/tree/main/docs)
+It is the [Telar tutorial](https://github.com/deeptelar/telar/tree/main/docs)
 made playable. Eight stages, one new move each, the same Pixel Pizza help desk growing from two
 nodes to a full agent workflow. One Compose Multiplatform codebase runs it in the browser
 (Kotlin/Wasm), on the desktop (JVM) and on Android. No account and no API key needed.
@@ -86,7 +86,7 @@ Requests are billed to your account.
 
 - `game/`: the ticket (the state), the graphs of the stages, the tools of the agent
 - `llm/`: the scripted model, and the Claude models on offer. The chat model interface, the Claude
-  client and the agent loop come from `langgraph-kt-agent` and `langgraph-kt-anthropic`
+  client and the agent loop come from `telar-agent` and `telar-anthropic`
 - `storage/`: which checkpointer of the library each platform uses, and `KeyValueStore` for the
   settings and the cleared stages
 - `ui/`: the screens, the board, and `Game.kt`, which runs the graphs for them
@@ -101,7 +101,7 @@ Requests are billed to your account.
 The JVM run also clicks through the game the way a player would, and draws every screen to
 `composeApp/build/screenshots`. The pictures in this README come from there.
 
-Building this app is a test of langgraph-kt from outside its repository. What that turned up is in
+Building this app is a test of Telar from outside its repository. What that turned up is in
 [FINDINGS.md](FINDINGS.md).
 
 ## License

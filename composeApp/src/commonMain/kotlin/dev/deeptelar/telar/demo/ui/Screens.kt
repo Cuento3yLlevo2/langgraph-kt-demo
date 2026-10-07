@@ -87,7 +87,7 @@ fun TitleScreen(game: Game, modelLabel: String, onStart: () -> Unit, onOptions: 
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Label("built with langgraph-kt")
+            Label("built with Telar")
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 if (roomForModel) Label("model $modelLabel")
                 PillButton("Options", onOptions, emphasis = Emphasis.Quiet)
@@ -142,7 +142,7 @@ fun StageSelectScreen(game: Game, onPlay: (Int) -> Unit) {
         DotMatrix("Select stage", pitch = if (LocalCompact.current) 3.dp else 5.dp)
         Body(
             "Every stage is a help desk that knows one move more than the last. They follow the levels of the " +
-                "langgraph-kt tutorial. Play them in order, or jump to the move you came for.",
+                "Telar tutorial. Play them in order, or jump to the move you came for.",
             Modifier.widthIn(max = 720.dp),
             color = colors.dim,
         )
