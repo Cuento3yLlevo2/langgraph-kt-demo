@@ -1,7 +1,7 @@
 package org.langgraphkt.demo
 
-import org.langgraphkt.END
-import org.langgraphkt.START
+import dev.deeptelar.telar.END
+import dev.deeptelar.telar.START
 import org.langgraphkt.demo.game.CodePart
 import org.langgraphkt.demo.game.stages
 import kotlin.test.Test

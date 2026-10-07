@@ -1,6 +1,6 @@
 package org.langgraphkt.demo.storage
 
-import org.langgraphkt.Checkpointer
+import dev.deeptelar.telar.Checkpointer
 import org.langgraphkt.demo.game.Ticket
 import java.io.File
 

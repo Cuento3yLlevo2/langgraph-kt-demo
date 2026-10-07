@@ -4,8 +4,8 @@ import io.ktor.client.HttpClient
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
-import org.langgraphkt.agent.ChatModel
-import org.langgraphkt.anthropic.AnthropicChatModel
+import dev.deeptelar.telar.agent.ChatModel
+import dev.deeptelar.telar.anthropic.AnthropicChatModel
 
 /**
  * A Claude model the game can be played with.

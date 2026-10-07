@@ -36,8 +36,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
-import org.langgraphkt.END
-import org.langgraphkt.START
+import dev.deeptelar.telar.END
+import dev.deeptelar.telar.START
 import org.langgraphkt.demo.game.Cell
 import kotlin.math.max
 

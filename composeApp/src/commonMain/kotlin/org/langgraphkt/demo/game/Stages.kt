@@ -1,9 +1,9 @@
 package org.langgraphkt.demo.game
 
-import org.langgraphkt.CompiledGraph
-import org.langgraphkt.END
-import org.langgraphkt.START
-import org.langgraphkt.agent.ChatModel
+import dev.deeptelar.telar.CompiledGraph
+import dev.deeptelar.telar.END
+import dev.deeptelar.telar.START
+import dev.deeptelar.telar.agent.ChatModel
 import org.langgraphkt.demo.llm.ScriptedChatModel
 
 /** Where a node sits on a stage's board: [column] from the left, [row] from the top. */

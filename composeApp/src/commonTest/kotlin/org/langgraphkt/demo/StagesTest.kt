@@ -1,13 +1,13 @@
 package org.langgraphkt.demo
 
 import kotlinx.coroutines.test.runTest
-import org.langgraphkt.END
-import org.langgraphkt.GraphConfig
-import org.langgraphkt.GraphResult
-import org.langgraphkt.MemoryCheckpointer
-import org.langgraphkt.NodeExecutionException
-import org.langgraphkt.START
-import org.langgraphkt.agent.ChatMessage
+import dev.deeptelar.telar.END
+import dev.deeptelar.telar.GraphConfig
+import dev.deeptelar.telar.GraphResult
+import dev.deeptelar.telar.MemoryCheckpointer
+import dev.deeptelar.telar.NodeExecutionException
+import dev.deeptelar.telar.START
+import dev.deeptelar.telar.agent.ChatMessage
 import org.langgraphkt.demo.game.Agent
 import org.langgraphkt.demo.game.Desk
 import org.langgraphkt.demo.game.HelpDesks

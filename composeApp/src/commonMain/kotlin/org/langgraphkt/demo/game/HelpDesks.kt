@@ -1,12 +1,12 @@
 package org.langgraphkt.demo.game
 
-import org.langgraphkt.CompiledGraph
-import org.langgraphkt.END
-import org.langgraphkt.NodeRef
-import org.langgraphkt.START
-import org.langgraphkt.StateGraph
-import org.langgraphkt.agent.ChatMessage
-import org.langgraphkt.agent.chatWithProgress
+import dev.deeptelar.telar.CompiledGraph
+import dev.deeptelar.telar.END
+import dev.deeptelar.telar.NodeRef
+import dev.deeptelar.telar.START
+import dev.deeptelar.telar.StateGraph
+import dev.deeptelar.telar.agent.ChatMessage
+import dev.deeptelar.telar.agent.chatWithProgress
 import org.langgraphkt.demo.llm.Responder
 
 /**

@@ -3,11 +3,11 @@ package org.langgraphkt.demo.llm
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import org.langgraphkt.agent.ChatEvent
-import org.langgraphkt.agent.ChatMessage
-import org.langgraphkt.agent.ChatModel
-import org.langgraphkt.agent.ChatRequest
-import org.langgraphkt.agent.ChatResponse
+import dev.deeptelar.telar.agent.ChatEvent
+import dev.deeptelar.telar.agent.ChatMessage
+import dev.deeptelar.telar.agent.ChatModel
+import dev.deeptelar.telar.agent.ChatRequest
+import dev.deeptelar.telar.agent.ChatResponse
 
 /** Answers a request it recognises, or returns null to let the next responder try. */
 fun interface Responder {

@@ -3,14 +3,14 @@ package org.langgraphkt.demo.game
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import org.langgraphkt.CompiledGraph
-import org.langgraphkt.START
-import org.langgraphkt.StateGraph
-import org.langgraphkt.agent.ChatMessage
-import org.langgraphkt.agent.Description
-import org.langgraphkt.agent.Tool
-import org.langgraphkt.agent.ToolCall
-import org.langgraphkt.agent.toolLoop
+import dev.deeptelar.telar.CompiledGraph
+import dev.deeptelar.telar.START
+import dev.deeptelar.telar.StateGraph
+import dev.deeptelar.telar.agent.ChatMessage
+import dev.deeptelar.telar.agent.Description
+import dev.deeptelar.telar.agent.Tool
+import dev.deeptelar.telar.agent.ToolCall
+import dev.deeptelar.telar.agent.toolLoop
 import org.langgraphkt.demo.llm.Responder
 
 @Serializable

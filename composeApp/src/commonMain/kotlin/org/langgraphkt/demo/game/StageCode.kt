@@ -1,7 +1,7 @@
 package org.langgraphkt.demo.game
 
-import org.langgraphkt.END
-import org.langgraphkt.START
+import dev.deeptelar.telar.END
+import dev.deeptelar.telar.START
 
 /** A piece of code, with a few words that say what it is. */
 data class CodePart(val title: String, val code: String)

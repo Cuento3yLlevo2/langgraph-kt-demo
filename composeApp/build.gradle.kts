@@ -86,17 +86,17 @@ kotlin {
         jvmMain.get().dependsOn(jvmAndAndroidMain)
         androidMain.get().dependsOn(jvmAndAndroidMain)
         jvmAndAndroidMain.dependencies {
-            implementation(libs.langgraph.checkpoint.file)
+            implementation(libs.telar.checkpoint.file)
         }
 
         commonMain {
             kotlin.srcDir(embedStageSources.flatMap { it.output })
         }
         commonMain.dependencies {
-            implementation(libs.langgraph.core)
-            implementation(libs.langgraph.serialization)
-            implementation(libs.langgraph.agent)
-            implementation(libs.langgraph.anthropic)
+            implementation(libs.telar.core)
+            implementation(libs.telar.serialization)
+            implementation(libs.telar.agent)
+            implementation(libs.telar.anthropic)
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.ui)
@@ -123,7 +123,7 @@ kotlin {
             implementation(libs.ktor.client.okhttp)
         }
         wasmJsMain.dependencies {
-            implementation(libs.langgraph.checkpoint.browser)
+            implementation(libs.telar.checkpoint.browser)
             implementation(libs.ktor.client.js)
         }
     }

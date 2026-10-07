@@ -9,7 +9,7 @@ import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import org.jetbrains.skia.EncodedImageFormat
 import org.langgraphkt.demo.game.Mail
-import org.langgraphkt.MemoryCheckpointer
+import dev.deeptelar.telar.MemoryCheckpointer
 import org.langgraphkt.demo.game.scriptedModel
 import org.langgraphkt.demo.storage.MemoryStore
 import org.langgraphkt.demo.ui.Game

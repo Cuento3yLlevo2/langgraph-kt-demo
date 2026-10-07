@@ -2,7 +2,7 @@ package org.langgraphkt.demo.ui
 
 import io.ktor.client.HttpClient
 import org.langgraphkt.demo.game.scriptedModel
-import org.langgraphkt.agent.ChatModel
+import dev.deeptelar.telar.agent.ChatModel
 import org.langgraphkt.demo.llm.ClaudeModels
 import org.langgraphkt.demo.storage.KeyValueStore
 

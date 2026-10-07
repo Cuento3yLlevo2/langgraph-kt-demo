@@ -9,12 +9,12 @@ import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
-import org.langgraphkt.Checkpoint
-import org.langgraphkt.Checkpointer
-import org.langgraphkt.END
-import org.langgraphkt.START
-import org.langgraphkt.agent.ChatModel
-import org.langgraphkt.agent.ChatModelException
+import dev.deeptelar.telar.Checkpoint
+import dev.deeptelar.telar.Checkpointer
+import dev.deeptelar.telar.END
+import dev.deeptelar.telar.START
+import dev.deeptelar.telar.agent.ChatModel
+import dev.deeptelar.telar.agent.ChatModelException
 import org.langgraphkt.demo.game.Agent
 import org.langgraphkt.demo.game.HelpDesks
 import org.langgraphkt.demo.game.Mail
@@ -24,7 +24,7 @@ import org.langgraphkt.demo.storage.MemoryStore
 import org.langgraphkt.demo.ui.Game
 import org.langgraphkt.demo.ui.Phase
 import org.langgraphkt.demo.ui.Tone
-import org.langgraphkt.serialization.CheckpointCodec
+import dev.deeptelar.telar.serialization.CheckpointCodec
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

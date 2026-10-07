@@ -13,7 +13,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.v2.runComposeUiTest
-import org.langgraphkt.MemoryCheckpointer
+import dev.deeptelar.telar.MemoryCheckpointer
 import org.langgraphkt.demo.game.scriptedModel
 import org.langgraphkt.demo.storage.MemoryStore
 import org.langgraphkt.demo.ui.Game

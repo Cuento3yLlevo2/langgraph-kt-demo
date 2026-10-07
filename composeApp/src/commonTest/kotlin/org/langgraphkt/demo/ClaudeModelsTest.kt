@@ -20,11 +20,11 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import org.langgraphkt.agent.ChatMessage
-import org.langgraphkt.agent.ChatModel
-import org.langgraphkt.agent.ChatModelException
-import org.langgraphkt.agent.ChatRequest
-import org.langgraphkt.agent.textDelta
+import dev.deeptelar.telar.agent.ChatMessage
+import dev.deeptelar.telar.agent.ChatModel
+import dev.deeptelar.telar.agent.ChatModelException
+import dev.deeptelar.telar.agent.ChatRequest
+import dev.deeptelar.telar.agent.textDelta
 import org.langgraphkt.demo.game.Agent
 import org.langgraphkt.demo.game.Desk
 import org.langgraphkt.demo.game.Ticket
