@@ -41,7 +41,7 @@ import dev.deeptelar.telar.demo.game.Stage
 import dev.deeptelar.telar.demo.game.Ticket
 import dev.deeptelar.telar.demo.game.stages
 
-private const val TUTORIAL = "https://github.com/deeptelar/telar/blob/main/docs/"
+private const val TUTORIAL = "https://github.com/deeptelar/telar/blob/main/docs/tutorial/"
 
 /** The page of each stage's level: stage 3 is level 3 of the tutorial. */
 private val tutorialPages = mapOf(
