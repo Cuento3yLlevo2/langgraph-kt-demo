@@ -272,3 +272,41 @@ What the pass showed:
   folder, so both start empty. In the browser the runs keep their prefix, but the game has a new
   address, and a browser has nothing stored for it yet.
 - **On Android the game is a new app.** The application id follows the package.
+
+## The seventh pass: a release with new features
+
+`0.1.0-alpha07` adds graphs inside graphs, the history of a run, merge rules for single properties
+and two model modules. The game uses none of them yet. This pass moved the game to the release from
+Maven Central, to see what such a release asks of an app that only wants the new version.
+
+What changed here:
+
+- The version of the six dependencies.
+- One branch in `Game`. It reads the events of a stream in a `when` without an `else`, and a stream
+  has a new kind of event, `SubgraphEvent`. No stage has a graph inside a graph; the branch reads a
+  model's text the same way as for a node.
+
+What was checked:
+
+- 47 tests pass on the JVM and 44 in headless Chrome (wasmJs), the same as before the move.
+- The browser bundle and the Android app build.
+- The files of the library that Gradle used have the checksums of the files on Maven Central.
+
+Not checked: the hosted game in a real browser after the change, the Android app on a device, and a
+run saved with `0.1.0-alpha06` that is continued with this version. The library's changelog says
+that such a save is read.
+
+What the pass showed:
+
+- **The compiler found the one place to change.** A `when` without an `else` does not compile when
+  the library adds a kind of event. An app that has an `else` there compiles as before and leaves
+  the events of a subgraph out without a word.
+- **A checkpointer of the game's own needed no change.** `Checkpointer` has a fourth function,
+  `history`, with a default. The small checkpointer of the test that keeps text compiled as it was.
+- **On the desktop and on Android a save now holds every step of a run.** `FileCheckpointer` keeps
+  the checkpoint of each step, one line of JSON for each, where it kept the last one. A new run of a
+  stage starts its file again, so a file holds the steps of one run, and the game leaves the default.
+  In the browser `LocalStorageCheckpointer` still keeps only the latest checkpoint.
+- **A save does not go back to an older build.** The changelog says that the earlier version cannot
+  read a thread with more than one checkpoint. On the desktop and on Android a run saved by this
+  build of the game is therefore lost to an older one. For a game that is acceptable.

@@ -228,8 +228,9 @@ class StageController(
                 active = active + event.node
                 trail = trail + lastNodes.filter { leadsTo(it, event.node) }.map { it to event.node }
             }
-            // A model node reports each piece of text while the model writes it.
-            is GraphEvent.NodeProgress -> event.textDelta?.let { writing += it }
+            // A model node reports each piece of text while the model writes it. No stage has a graph
+            // inside a graph, but the text of a model in one would be read the same way.
+            is GraphEvent.NodeProgress, is GraphEvent.SubgraphEvent -> event.textDelta?.let { writing += it }
             is GraphEvent.NodeCompleted -> {
                 active = active - event.node
                 visited = visited + event.node
