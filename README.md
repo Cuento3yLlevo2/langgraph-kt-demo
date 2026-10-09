@@ -8,7 +8,7 @@ the ticket cross the board node by node.
 
 ![Stage 8: the kitchen and the driver run at the same time](docs/stage.png)
 
-It is the [Telar tutorial](https://github.com/deeptelar/telar/tree/main/docs)
+It is the [Telar tutorial](https://github.com/deeptelar/telar/tree/main/docs/tutorial)
 made playable. Eight stages, one new move each, the same Pixel Pizza help desk growing from two
 nodes to a full agent workflow. One Compose Multiplatform codebase runs it in the browser
 (Kotlin/Wasm), on the desktop (JVM) and on Android. No account and no API key needed.
