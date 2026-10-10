@@ -4,6 +4,7 @@ import io.ktor.client.HttpClient
 import dev.deeptelar.telar.demo.game.scriptedModel
 import dev.deeptelar.telar.agent.ChatModel
 import dev.deeptelar.telar.demo.llm.ClaudeModels
+import dev.deeptelar.telar.demo.llm.orUnreachable
 import dev.deeptelar.telar.demo.storage.KeyValueStore
 import dev.deeptelar.telar.openai.OpenAiChatModel
 
@@ -80,9 +81,9 @@ data class Settings(
 
     fun chatModel(client: HttpClient): ChatModel = when {
         !usesService -> scriptedModel(delayMillis = 650)
-        mode == ModelMode.Claude -> ClaudeModels.byId(modelId).chatModel(client, apiKey.trim())
+        mode == ModelMode.Claude -> ClaudeModels.byId(modelId).chatModel(client, apiKey.trim()).orUnreachable(host)
         // One class for every service with the API of OpenAI: only the address changes.
-        else -> OpenAiChatModel(client, apiKey = apiKey.trim().ifEmpty { null }, model = modelId.trim(), baseUrl = baseUrl)
+        else -> OpenAiChatModel(client, apiKey = apiKey.trim().ifEmpty { null }, model = modelId.trim(), baseUrl = baseUrl).orUnreachable(host)
     }
 }
 
