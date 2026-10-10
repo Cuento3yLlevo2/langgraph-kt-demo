@@ -114,8 +114,11 @@ and the Android app have no such limit.
 ./gradlew :composeApp:wasmJsBrowserTest   # the common tests again in headless Chrome (needs Chrome)
 ```
 
+Every pull request runs both, and the game is only published when they pass.
+
 The JVM run also clicks through the game the way a player would, and draws every screen to
-`composeApp/build/screenshots`. The pictures in this README come from there. So does
+`composeApp/build/screenshots`. A pull request has those pictures as the artifact `screenshots` of
+its test run. The pictures in this README come from there. So does
 `social-preview.png`, the picture a link to the game or to this repository is shown with: copy it
 to `composeApp/src/wasmJsMain/resources/` after a change, and upload the same file under Settings,
 Social preview.
