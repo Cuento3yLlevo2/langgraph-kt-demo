@@ -99,7 +99,10 @@ Requests are billed to your account.
 ```
 
 The JVM run also clicks through the game the way a player would, and draws every screen to
-`composeApp/build/screenshots`. The pictures in this README come from there.
+`composeApp/build/screenshots`. The pictures in this README come from there. So does
+`social-preview.png`, the picture a link to the game or to this repository is shown with: copy it
+to `composeApp/src/wasmJsMain/resources/` after a change, and upload the same file under Settings,
+Social preview.
 
 Building this app is a test of Telar from outside its repository. What that turned up is in
 [FINDINGS.md](FINDINGS.md).
