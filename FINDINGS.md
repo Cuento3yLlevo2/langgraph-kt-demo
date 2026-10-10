@@ -310,3 +310,43 @@ What the pass showed:
 - **A save does not go back to an older build.** The changelog says that the earlier version cannot
   read a thread with more than one checkpoint. On the desktop and on Android a run saved by this
   build of the game is therefore lost to an older one. For a game that is acceptable.
+
+## The eighth pass: the agent in the full desk
+
+Level 8 of the tutorial sends a question about the menu to an agent. Stage 8 of the game did not: it
+had three of the four routes, and "Do you sell salad?" got the reply for everything else. This pass
+added the route, with `0.1.0-alpha07`.
+
+What changed here:
+
+- Stage 8 has a `toolLoop` with the price tool of stage 6 and a `send` node after it, as level 8 has.
+  Its inbox has a fourth ticket, so that every route can be played.
+- `topicOf` knows the topic `menu`. Stages 1 and 2 share the function: stage 1 now files the salad
+  question under `menu`, and stage 2 routes it as before.
+- The code under a tile follows a helper into another object. The agent of stage 8 is in
+  `HelpDesks.kt` and its tool in `Agent.kt`, and the tile shows both.
+- The three pictures in the README are new. They still said "Tutorial level 10", from before the
+  tutorial had eight levels.
+
+What was checked:
+
+- 50 tests pass on the JVM and 47 in headless Chrome (wasmJs). Three are new on both: the graph
+  answers a question about the menu with the price, the game lights the loop and the way out of it,
+  and the tiles of the agent show its arrows and its tool.
+- The browser bundle builds.
+- The JVM run draws stage 8 with the tool at work, and the arrows of the agent do not cross a tile.
+
+Not checked: the new route with Claude. Its prompt has only been answered by the scripted model.
+Also not checked: the hosted game in a real browser, and the Android app on a device.
+
+What the pass showed about the library:
+
+- **`toolLoop` went into a graph with three other routes as it is.** What it returns is a target of
+  a conditional edge like any node, and `then` names the node that follows the agent. Stage 6 and
+  stage 8 keep their conversation in the same field of the ticket.
+- **The game drew and logged the new route without a change.** The arrows of the loop come from
+  `topology`, and the run log reads the tool calls from the state of each step. The stage only had
+  to say where its three new tiles sit.
+- **The two nodes of the agent have the names the library gives them.** Stage 8 calls them `model`
+  and `tools`, as the tutorial does. Stage 6 names its model node `assistant`, so the same node has
+  two names in the game.

@@ -154,10 +154,22 @@ class StagesTest {
     }
 
     @Test
-    fun theFullDeskAnswersAnythingElseWithoutALookup() = runTest {
+    fun theFullDeskAsksTheAgentAboutTheMenu() = runTest {
         val ticket = HelpDesks.fullDesk(desk).invoke(Ticket("Cleo", "Do you sell salad?"), pausingBeforePay()).state
 
+        assertEquals("menu", ticket.topic)
+        assertEquals("menu_price", (ticket.chat[1] as ChatMessage.Assistant).toolCalls.single().name)
+        assertEquals("Hi Cleo! One salad costs 6 euros.", ticket.reply)
+        // The writer and its check are not on this path.
+        assertEquals(0, ticket.attempts)
+    }
+
+    @Test
+    fun theFullDeskAnswersAnythingElseWithoutALookup() = runTest {
+        val ticket = HelpDesks.fullDesk(desk).invoke(Ticket("Dan", "Thanks for the pizza!"), pausingBeforePay()).state
+
         assertEquals(emptyList(), ticket.facts)
-        assertEquals("Hi Cleo, a colleague will reply soon.", ticket.reply)
+        assertEquals(emptyList(), ticket.chat)
+        assertEquals("Hi Dan, a colleague will reply soon.", ticket.reply)
     }
 }

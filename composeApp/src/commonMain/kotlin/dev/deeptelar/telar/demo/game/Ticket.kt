@@ -4,6 +4,7 @@ import kotlinx.coroutines.delay
 import kotlinx.serialization.Serializable
 import dev.deeptelar.telar.agent.ChatMessage
 import dev.deeptelar.telar.agent.ChatModel
+import dev.deeptelar.telar.agent.Tool
 
 /**
  * The state of every stage: one customer message on its way to a reply.
@@ -22,7 +23,7 @@ data class Ticket(
     val reply: String = "",
     val attempts: Int = 0,
     val problem: String = "",
-    /** The conversation with the model, kept by the agent of stage 6. */
+    /** The conversation with the model, kept by the agent of stages 6 and 8. */
     val chat: List<ChatMessage> = emptyList(),
 )
 
@@ -38,4 +39,10 @@ data class Mail(val from: String, val text: String)
  */
 class Desk(val model: ChatModel, private val workMillis: Long = 0) {
     suspend fun work() = delay(workMillis)
+
+    /** Returns [tool] as a tool that takes a moment, like every other piece of work in the game. */
+    fun slow(tool: Tool): Tool = Tool(tool.spec) { input ->
+        work()
+        tool.execute(input)
+    }
 }

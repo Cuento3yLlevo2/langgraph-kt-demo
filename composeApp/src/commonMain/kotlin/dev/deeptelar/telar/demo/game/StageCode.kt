@@ -25,7 +25,16 @@ class StageCode(function: String, sources: Collection<String>) {
         fun mentions(word: String): Boolean = Regex("\\b${Regex.escape(word)}\\b").containsMatchIn(text)
     }
 
-    private val members: List<Block>
+    /** The members of the object in one file. [owner] is the name of that object. */
+    private class Source(val owner: String?, val members: List<Block>) {
+        /** What a statement can use: every member but a graph and a constant with a short value. */
+        val helpers: List<Block> = members.filter { it.name != null && CONSTANT.find(it.head) == null && !it.builds(it.name) }
+    }
+
+    private val files: List<Source>
+
+    /** The file of the graph. */
+    private val home: Source
     private val graph: Block
     private val constants: Map<String, String>
 
@@ -35,15 +44,17 @@ class StageCode(function: String, sources: Collection<String>) {
     /** The statement of each node that is added with `node(...)`, and the name of its `val`, by node name. */
     private val nodes: Map<String, Pair<String, Block>>
 
-    /** The names of the nodes that `toolLoop` adds, and its statement. */
-    private val loop: Pair<Set<String>, Block>?
+    /** The agent that `toolLoop` adds: the names of its two nodes, its statement, and the name of its `val` if it has one. */
+    private class Loop(val nodes: Set<String>, val statement: Block, val name: String?)
+
+    private val loop: Loop?
 
     init {
-        val files = sources.map { blocks(it.lines(), MEMBER_INDENT) }
-        members = files.firstOrNull { file -> file.any { it.builds(function) } }
+        files = sources.map { Source(OBJECT.find(it)?.groupValues?.get(1), blocks(it.lines(), MEMBER_INDENT)) }
+        home = files.firstOrNull { file -> file.members.any { it.builds(function) } }
             ?: throw IllegalArgumentException("No function '$function' builds a graph in the sources.")
-        graph = members.first { it.builds(function) }
-        constants = members.mapNotNull { CONSTANT.find(it.head) }.associate { it.groupValues[1] to it.groupValues[2] }
+        graph = home.members.first { it.builds(function) }
+        constants = home.members.mapNotNull { CONSTANT.find(it.head) }.associate { it.groupValues[1] to it.groupValues[2] }
 
         val statements = blocks(graph.text.lines(), MEMBER_INDENT)
         arrows = statements.filter { !it.head.startsWith("val ") && TOOL_LOOP !in it.text }
@@ -53,7 +64,7 @@ class StageCode(function: String, sources: Collection<String>) {
         loop = statements.firstOrNull { TOOL_LOOP in it.text }?.let { statement ->
             fun name(parameter: String, default: String) =
                 Regex("$parameter = ([\\w\"]+)").find(statement.text)?.let { resolve(it.groupValues[1]) } ?: default
-            setOf(name("modelNode", "model"), name("toolsNode", "tools")) to statement
+            Loop(setOf(name("modelNode", "model"), name("toolsNode", "tools")), statement, LOOP_NAME.find(statement.head)?.groupValues?.get(1))
         }
     }
 
@@ -62,8 +73,11 @@ class StageCode(function: String, sources: Collection<String>) {
         val parts = when {
             node == START -> listOf(CodePart("arrows from START", arrowsWith("START")))
             node == END -> listOf(CodePart("arrows to END", arrowsWith("END")))
-            loop != null && node in loop.first ->
-                listOf(CodePart("the agent loop adds this node", loop.second.text), CodePart("it uses", used(loop.second)))
+            loop != null && node in loop.nodes -> listOf(
+                CodePart("the agent loop adds this node", loop.statement.text),
+                CodePart("its arrows", loop.name?.let { name -> arrows.filter { it.mentions(name) }.joinToString("\n") { it.text } }.orEmpty()),
+                CodePart("it uses", used(loop.statement)),
+            )
             else -> nodes[node]?.let { (name, statement) ->
                 listOf(CodePart("the node", statement.text), CodePart("its arrows", arrowsWith(name)), CodePart("it uses", used(statement)))
             }.orEmpty()
@@ -72,29 +86,32 @@ class StageCode(function: String, sources: Collection<String>) {
     }
 
     private fun arrowsWith(word: String): String =
-        (arrows + listOfNotNull(loop?.second)).filter { it.mentions(word) }.joinToString("\n") { it.text }
+        (arrows + listOfNotNull(loop?.statement)).filter { it.mentions(word) }.joinToString("\n") { it.text }
 
     /**
-     * The functions and values of the file that [statement] mentions, and the ones those mention.
+     * The functions and values that [statement] mentions, and the ones those mention. One of the
+     * same file is mentioned by its name, and one of another object as `Agent.menuPrice`.
      * A constant with a short value is left out. A long one, such as a prompt, is shown.
      */
     private fun used(statement: Block): String {
-        val helpers = members.filter { it.name != null && CONSTANT.find(it.head) == null && !it.builds(it.name) }
         val found = mutableListOf<Block>()
         // A parameter of the graph's function can stand for a helper: `tools: List<Tool> = deskTools`.
         val parameters = graph.head.substringAfter('(').split(", ").filter { parameter ->
             PARAMETER.find(parameter)?.let { statement.mentions(it.groupValues[1]) } == true
         }
-        var look = listOf(Block(statement.text + "\n" + parameters.joinToString("\n")))
+        var look = listOf(Block(statement.text + "\n" + parameters.joinToString("\n")) to home)
         while (look.isNotEmpty()) {
-            val next = helpers.filter { helper -> helper !in found && look.any { it.mentions(helper.name!!) } }
-            found += next
+            val next = files.flatMap { file ->
+                file.helpers.filter { helper ->
+                    helper !in found && look.any { (block, from) -> block.mentions(if (file === from) helper.name!! else "${file.owner}.${helper.name}") }
+                }.map { it to file }
+            }
+            found += next.map { it.first }
             look = next
         }
-        return helpers.filter { it in found }.joinToString("\n\n") { it.text }
+        // The helpers of the graph's own file come first.
+        return (listOf(home) + (files - home)).flatMap { it.helpers }.filter { it in found }.joinToString("\n\n") { it.text }
     }
-
-    private fun Block.builds(function: String): Boolean = head.contains("fun $function(") && "StateGraph<" in head
 
     /** A node is named by a text or by a constant. */
     private fun resolve(argument: String): String =
@@ -104,10 +121,14 @@ class StageCode(function: String, sources: Collection<String>) {
         /** Members of an object are indented once, and so are the statements of a function. */
         const val MEMBER_INDENT = 4
         const val TOOL_LOOP = "toolLoop("
+        val LOOP_NAME = Regex("""^val (\w+) = toolLoop\(""")
+        val OBJECT = Regex("""^object (\w+)""", RegexOption.MULTILINE)
         val DECLARATION = Regex("""^(?:(?:private|internal|suspend|const) )*(?:fun|val|class) (\w+)""")
         val CONSTANT = Regex("""const val (\w+)(?:: String)? = "([^"]*)"""")
         val NODE = Regex("""^val (\w+) = node\(([^,)]+)""")
         val PARAMETER = Regex("""^(\w+):""")
+
+        fun Block.builds(function: String): Boolean = head.contains("fun $function(") && "StateGraph<" in head
 
         fun String.isComment(): Boolean = trimStart().let { it.startsWith("//") || it.startsWith("/*") || it.startsWith("*") }
 

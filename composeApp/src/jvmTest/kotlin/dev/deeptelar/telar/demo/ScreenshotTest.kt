@@ -71,6 +71,13 @@ class ScreenshotTest {
         shoot("stage-8-clear", Screen.Play(8), height = 1000)
         shoot("stage-8-phone", Screen.Play(8), width = 390, height = 1400)
 
+        // Stage 8 again, with a question about the menu: the model asked for a price, and the tool is at work.
+        game.controller(8).play(Mail("Cleo", "Do you sell salad?"))
+        scope.advanceTimeBy(2_500)
+        shoot("stage-8-agent", Screen.Play(8), height = 1100)
+        scope.advanceUntilIdle()
+        shoot("stage-8-agent-clear", Screen.Play(8), height = 1100)
+
         game.controller(3).play(Mail("Ana", "My pizza is late!"))
         scope.advanceUntilIdle()
         shoot("stage-3-clear", Screen.Play(3))

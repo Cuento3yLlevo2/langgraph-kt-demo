@@ -218,6 +218,22 @@ class GameTest {
     }
 
     @Test
+    fun theAgentOfTheFullDeskLightsItsLoopAndTheWayOut() = runTest {
+        val stage = game().controller(8)
+
+        stage.play(Mail("Cleo", "Do you sell salad?"))
+        advanceUntilIdle()
+
+        assertEquals(Phase.Clear, stage.phase)
+        assertEquals(
+            setOf(START to "read", "read" to "model", "model" to "tools", "tools" to "model", "model" to "send", "send" to END),
+            stage.trail,
+        )
+        assertEquals(listOf("01", "02", " >>", "03", " <<", "04", "05", "END"), stage.log.map { it.tag })
+        assertEquals("Hi Cleo! One salad costs 6 euros.", stage.ticket?.reply)
+    }
+
+    @Test
     fun aFailedModelCallIsGameOverAtTheNodeThatAsked() = runTest {
         val offline = ChatModel { throw ChatModelException("Could not reach the Claude API: offline") }
         val stage = Game(offline, store, saves, this, workMillis = 0).controller(6)
