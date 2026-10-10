@@ -33,8 +33,16 @@ object Agent {
             "Use the order_status tool for questions about a delivery and the menu_price tool for questions about what " +
             "we sell or what it costs. Never guess a price."
 
+    /** The prompt of the agent in stage 8, which only gets the questions about the menu. */
+    const val MENU_SYSTEM: String =
+        "You work at the help desk of Pixel Pizza and answer questions about the menu. Answer the customer in one or two " +
+            "friendly sentences and use their name. Use the menu_price tool for what we sell or what it costs. Never guess a price."
+
     private const val CUSTOMER = "Customer: "
     private const val MESSAGE = "Message: "
+
+    /** The conversation of a new ticket starts with the customer's message. */
+    fun opening(ticket: Ticket): String = "$CUSTOMER${ticket.customer}\n$MESSAGE${ticket.message}"
 
     /**
      * The classic agent loop as a graph: the model answers or asks for tools, the tools run, and
@@ -44,13 +52,7 @@ object Agent {
     fun graph(desk: Desk, tools: List<Tool> = deskTools): CompiledGraph<Ticket> = StateGraph<Ticket> {
         START then toolLoop(
             model = desk.model,
-            // A tool takes a moment, like every other piece of work in the game.
-            tools = tools.map { tool ->
-                Tool(tool.spec) { input ->
-                    desk.work()
-                    tool.execute(input)
-                }
-            },
+            tools = tools.map(desk::slow),
             messages = { it.chat },
             append = { ticket, new ->
                 val answer = (new.lastOrNull() as? ChatMessage.Assistant)?.takeIf { it.toolCalls.isEmpty() }
@@ -60,8 +62,7 @@ object Agent {
                     reply = answer?.text?.trim() ?: ticket.reply,
                 )
             },
-            // The conversation of a new ticket starts with the customer's message.
-            firstMessage = { "$CUSTOMER${it.customer}\n$MESSAGE${it.message}" },
+            firstMessage = ::opening,
             system = SYSTEM,
             modelNode = ASSISTANT,
             toolsNode = TOOLS,
@@ -89,7 +90,7 @@ object Agent {
 
     /** Scripted behaviour: calls a tool when the message clearly needs one, then reports what came back. */
     val script: Responder = Responder { request ->
-        if (request.system != SYSTEM) return@Responder null
+        if (request.system != SYSTEM && request.system != MENU_SYSTEM) return@Responder null
         val ticket = request.messages.first().text.lines()
         val customer = ticket.first().removePrefix(CUSTOMER)
         val results = request.messages.takeLastWhile { it is ChatMessage.ToolResult }

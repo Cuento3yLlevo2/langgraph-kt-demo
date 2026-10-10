@@ -46,6 +46,7 @@ class StageCodeTest {
                     fun topicOf(message: String): String = when {
                         "refund" in message.lowercase() -> "refund"
                         "where" in message.lowercase() -> "delivery"
+                        "sell" in message.lowercase() || "cost" in message.lowercase() -> "menu"
                         else -> "other"
                     }
                     """.trimIndent(),
@@ -98,6 +99,22 @@ class StageCodeTest {
             assertTrue(parts.getValue("it uses").contains("val menuPrice: Tool = Tool<MenuLookup>("), node)
             assertTrue(parts.getValue("it uses").contains("private val menu = mapOf("), "what a tool uses is shown too")
         }
+    }
+
+    @Test
+    fun theAgentOfTheLastStageShowsItsArrowsAndTheToolOfStageSix() {
+        for (node in listOf("model", "tools")) {
+            val parts = code(8, node)
+
+            assertTrue(parts.getValue("the agent loop adds this node").contains("val agent = toolLoop("), node)
+            assertTrue(parts.getValue("its arrows").startsWith("conditionalEdge(read, targets = setOf(lookUp, prepare, agent, write))"), node)
+            // The tool and the prompt are members of another object, and the menu is what the tool uses there.
+            assertTrue(parts.getValue("it uses").contains("val menuPrice: Tool = Tool<MenuLookup>("), node)
+            assertTrue(parts.getValue("it uses").contains("private val menu = mapOf("), node)
+            assertTrue(parts.getValue("it uses").contains("const val MENU_SYSTEM: String ="), node)
+            assertTrue("orderStatus" !in parts.getValue("it uses"), "a tool the agent does not get is not shown")
+        }
+        assertEquals("send then END\n" + code(8, "model").getValue("the agent loop adds this node"), code(8, "send").getValue("its arrows"))
     }
 
     @Test

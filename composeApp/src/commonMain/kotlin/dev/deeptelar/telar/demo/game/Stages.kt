@@ -144,9 +144,9 @@ val stages: List<Stage> = listOf(
         number = 8,
         title = "The full desk",
         moves = "every move on one board",
-        briefing = "A choice, two lookups at once, a loop that rewrites, and a save point before the money moves. " +
-            "Three tickets, three ways through.",
-        inbox = listOf(delivery, refund, salad),
+        briefing = "A choice, two lookups at once, a loop that rewrites, a save point before the money moves, and " +
+            "the agent for questions about the menu. Four tickets, four ways through.",
+        inbox = listOf(delivery, refund, salad, Mail("Dan", "Thanks for the pizza!")),
         board = mapOf(
             START to Cell(0, 2),
             "read" to Cell(1, 2),
@@ -157,6 +157,9 @@ val stages: List<Stage> = listOf(
             "check" to Cell(5, 2),
             "prepare" to Cell(2, 3),
             HelpDesks.PAY to Cell(3, 3),
+            "model" to Cell(2, 4),
+            "tools" to Cell(3, 5),
+            "send" to Cell(4, 4),
             END to Cell(6, 2),
         ),
         pauseBefore = setOf(HelpDesks.PAY),

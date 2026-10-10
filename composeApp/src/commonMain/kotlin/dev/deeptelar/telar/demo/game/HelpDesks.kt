@@ -7,6 +7,7 @@ import dev.deeptelar.telar.START
 import dev.deeptelar.telar.StateGraph
 import dev.deeptelar.telar.agent.ChatMessage
 import dev.deeptelar.telar.agent.chatWithProgress
+import dev.deeptelar.telar.agent.toolLoop
 import dev.deeptelar.telar.demo.llm.Responder
 
 /**
@@ -21,6 +22,7 @@ object HelpDesks {
     fun topicOf(message: String): String = when {
         "refund" in message.lowercase() -> "refund"
         "where" in message.lowercase() -> "delivery"
+        "sell" in message.lowercase() || "cost" in message.lowercase() -> "menu"
         else -> "other"
     }
 
@@ -224,11 +226,30 @@ object HelpDesks {
             payOut(ticket)
         }
 
+        // The model's answer is the last message of the conversation.
+        val send = node("send") { ticket ->
+            desk.work()
+            ticket.copy(reply = ticket.chat.last().text.trim())
+        }
+
+        // Questions about the menu: the agent of stage 6, with the price tool. `toolLoop` adds its two
+        // nodes, MODEL and TOOLS, and the run goes on to SEND when the model has its answer.
+        val agent = toolLoop(
+            model = desk.model,
+            tools = listOf(desk.slow(Agent.menuPrice)),
+            messages = { it.chat },
+            append = { ticket, new -> ticket.copy(chat = ticket.chat + new) },
+            firstMessage = Agent::opening,
+            system = Agent.MENU_SYSTEM,
+            then = send,
+        )
+
         START then read
-        conditionalEdge(read, targets = setOf(lookUp, prepare, write)) { ticket ->
+        conditionalEdge(read, targets = setOf(lookUp, prepare, agent, write)) { ticket ->
             when (ticket.topic) {
                 "delivery" -> lookUp
                 "refund" -> prepare
+                "menu" -> agent
                 else -> write
             }
         }
@@ -241,6 +262,7 @@ object HelpDesks {
         }
 
         prepare then pay then END
+        send then END
     }.compile()
 
     /** The scripted writer forgets the customer's name until the check asks for it. */
