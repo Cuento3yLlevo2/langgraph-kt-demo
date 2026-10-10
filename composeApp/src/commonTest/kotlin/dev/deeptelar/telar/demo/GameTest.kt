@@ -31,6 +31,9 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
+/** The tag of the log's line for what a conditional edge picked. */
+private const val CHOICE = " ->"
+
 /** The game behind the screens, driven the way the buttons drive it. */
 @OptIn(ExperimentalCoroutinesApi::class)
 class GameTest {
@@ -57,7 +60,17 @@ class GameTest {
         assertEquals(Phase.Clear, stage.phase)
         assertEquals(setOf(START, "read", "track", END), stage.visited)
         assertEquals(setOf(START to "read", "read" to "track", "track" to END), stage.trail)
-        assertEquals(listOf("01" to "read", "02" to "track", "END" to "reply sent"), stage.log.map { it.tag to it.text })
+        assertEquals(
+            listOf(
+                "01" to "read",
+                "" to "topic = \"delivery\"",
+                " ->" to "the edge after read picked track",
+                "02" to "track",
+                "" to "reply = \"Hi Ana, your pizza left the oven and is on its way.\"",
+                "END" to "reply sent",
+            ),
+            stage.log.map { it.tag to it.text },
+        )
         assertEquals(setOf(2), game.cleared)
     }
 
@@ -73,6 +86,12 @@ class GameTest {
 
         assertEquals(2, stage.step)
         assertTrue(stage.trail.containsAll(setOf(HelpDesks.KITCHEN to "answer", "driver" to "answer")))
+        // Both nodes wrote into the ticket in that step, and no edge of this stage has a choice to make.
+        assertEquals(
+            listOf("kitchen + driver", "facts += \"your pizza left the oven\"", "facts += \"the driver is 5 minutes away\""),
+            stage.log.take(3).map { it.text },
+        )
+        assertFalse(stage.log.any { it.tag == CHOICE })
     }
 
     @Test
@@ -84,6 +103,12 @@ class GameTest {
 
         assertTrue("check" to "write" in stage.trail)
         assertEquals(3, stage.ticket?.attempts)
+        // The edge after `check` chose three times: back twice, and then out.
+        assertEquals(
+            listOf("the edge after check picked write", "the edge after check picked write", "the edge after check picked END"),
+            stage.log.filter { it.tag == CHOICE }.map { it.text },
+        )
+        assertTrue("problem = \"\"" in stage.log.map { it.text })
     }
 
     @Test
@@ -104,6 +129,20 @@ class GameTest {
         assertEquals(Phase.Clear, stage.phase)
         assertEquals("Sorry Ben! We sent you 12 euros.", stage.ticket?.reply)
         assertEquals(setOf(5), game.cleared)
+        // The decision is the player's line in the log, and the step of `pay` only reports what `pay` wrote.
+        assertEquals(
+            listOf(
+                "01" to "prepare",
+                "" to "refund = 12",
+                "SAV" to "stopped before pay",
+                "YOU" to "approved",
+                "" to "approved = true",
+                "02" to "pay",
+                "" to "reply = \"Sorry Ben! We sent you 12 euros.\"",
+                "END" to "reply sent",
+            ),
+            stage.log.map { it.tag to it.text },
+        )
     }
 
     @Test
@@ -146,7 +185,7 @@ class GameTest {
         assertNull(stage.failedNode)
         assertEquals("Hi Ana! Your pizza is in the oven.", stage.ticket?.reply)
         // The retry did not run `greet` again.
-        assertEquals(listOf("01", "ERR", "02", "END"), stage.log.map { it.tag })
+        assertEquals(listOf("01", "ERR", "02", "END"), stage.log.map { it.tag }.filter { it.isNotEmpty() })
     }
 
     @Test
@@ -212,8 +251,12 @@ class GameTest {
         stage.play(Mail("Cleo", "Do you sell sushi?"))
         advanceUntilIdle()
 
-        assertEquals(listOf("01", " >>", "02", " <<", "03", "END"), stage.log.map { it.tag })
-        assertEquals(Tone.Failed, stage.log[3].tone)
+        assertEquals(listOf("01", " >>", "02", " <<", "03", "END"), stage.log.map { it.tag }.filter { it.isNotEmpty() && it != CHOICE })
+        assertEquals(Tone.Failed, stage.log.single { it.tag == " <<" }.tone)
+        assertEquals(
+            listOf("the edge after assistant picked tools", "the edge after assistant picked END"),
+            stage.log.filter { it.tag == CHOICE }.map { it.text },
+        )
         assertTrue(Agent.TOOLS to Agent.ASSISTANT in stage.trail)
     }
 
@@ -229,8 +272,40 @@ class GameTest {
             setOf(START to "read", "read" to "model", "model" to "tools", "tools" to "model", "model" to "send", "send" to END),
             stage.trail,
         )
-        assertEquals(listOf("01", "02", " >>", "03", " <<", "04", "05", "END"), stage.log.map { it.tag })
+        assertEquals(
+            listOf("01", "02", " >>", "03", " <<", "04", "05", "END"),
+            stage.log.map { it.tag }.filter { it.isNotEmpty() && it != CHOICE },
+        )
         assertEquals("Hi Cleo! One salad costs 6 euros.", stage.ticket?.reply)
+    }
+
+    @Test
+    fun aStepThatHandsTheTicketOnSaysSo() = runTest {
+        val stage = game().controller(8)
+
+        stage.play(delivery)
+        advanceUntilIdle()
+
+        val lookUp = stage.log.indexOfFirst { it.text == "look_up" }
+        assertEquals("ticket unchanged", stage.log[lookUp + 1].text)
+        assertEquals(Tone.Detail, stage.log[lookUp + 1].tone)
+    }
+
+    @Test
+    fun aRetryDoesNotReportAChoiceTwice() = runTest {
+        var calls = 0
+        val flaky = ChatModel { if (++calls == 1) throw ChatModelException("offline") else scriptedModel().chat(it) }
+        val stage = Game(flaky, store, saves, this, workMillis = 0).controller(8)
+
+        stage.play(Mail("Dan", "Thanks for the pizza!"))
+        advanceUntilIdle()
+        assertEquals(Phase.GameOver, stage.phase)
+
+        stage.retry()
+        advanceUntilIdle()
+
+        assertEquals(Phase.Clear, stage.phase)
+        assertEquals(1, stage.log.count { it.text == "the edge after read picked write" })
     }
 
     @Test

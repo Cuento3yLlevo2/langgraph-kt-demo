@@ -71,30 +71,30 @@ class ScreenshotTest {
         scope.advanceTimeBy(1_500)
         shoot("stage-8-running", Screen.Play(8), height = 1000)
         scope.advanceUntilIdle()
-        shoot("stage-8-clear", Screen.Play(8), height = 1000)
-        shoot("stage-8-phone", Screen.Play(8), width = 390, height = 1400)
+        shoot("stage-8-clear", Screen.Play(8), height = 2000)
+        shoot("stage-8-phone", Screen.Play(8), width = 390, height = 2400)
 
         // Stage 8 again, with a question about the menu: the model asked for a price, and the tool is at work.
         game.controller(8).play(Mail("Cleo", "Do you sell salad?"))
         scope.advanceTimeBy(2_500)
         shoot("stage-8-agent", Screen.Play(8), height = 1100)
         scope.advanceUntilIdle()
-        shoot("stage-8-agent-clear", Screen.Play(8), height = 1100)
+        shoot("stage-8-agent-clear", Screen.Play(8), height = 1900)
 
         game.controller(3).play(Mail("Ana", "My pizza is late!"))
         scope.advanceUntilIdle()
-        shoot("stage-3-clear", Screen.Play(3))
+        shoot("stage-3-clear", Screen.Play(3), height = 1700)
 
         game.controller(5).play(refund)
         scope.advanceUntilIdle()
-        shoot("stage-5-save-point", Screen.Play(5))
+        shoot("stage-5-save-point", Screen.Play(5), height = 1000)
 
         // Stage 6, after the tools ran: the model is halfway through writing its answer.
         game.controller(6).play(Mail("Ben", "How much is a margherita and a cola?"))
         scope.advanceTimeBy(2_800)
         shoot("stage-6-writing", Screen.Play(6), height = 1100)
         scope.advanceUntilIdle()
-        shoot("stage-6-clear", Screen.Play(6))
+        shoot("stage-6-clear", Screen.Play(6), height = 1700)
 
         game.controller(7).play(delivery)
         scope.advanceUntilIdle()

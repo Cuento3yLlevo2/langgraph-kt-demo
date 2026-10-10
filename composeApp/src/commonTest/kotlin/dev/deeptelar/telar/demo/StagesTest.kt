@@ -12,6 +12,7 @@ import dev.deeptelar.telar.demo.game.Agent
 import dev.deeptelar.telar.demo.game.Desk
 import dev.deeptelar.telar.demo.game.HelpDesks
 import dev.deeptelar.telar.demo.game.Ticket
+import dev.deeptelar.telar.demo.game.changesSince
 import dev.deeptelar.telar.demo.game.scriptedModel
 import dev.deeptelar.telar.demo.game.stages
 import kotlin.test.Test
@@ -171,5 +172,38 @@ class StagesTest {
         assertEquals(emptyList(), ticket.facts)
         assertEquals(emptyList(), ticket.chat)
         assertEquals("Hi Dan, a colleague will reply soon.", ticket.reply)
+    }
+
+    @Test
+    fun theChangesOfATicketAreListedFieldByField() {
+        val after = ana.copy(
+            topic = "delivery",
+            facts = listOf("your pizza left the oven"),
+            chat = listOf(ChatMessage.User("Hi")),
+            refund = 12,
+            approved = true,
+            reply = "Hi Ana!",
+            attempts = 1,
+            problem = "say sorry",
+        )
+
+        assertEquals(
+            listOf(
+                "topic = \"delivery\"",
+                "facts += \"your pizza left the oven\"",
+                "chat += 1 message",
+                "refund = 12",
+                "attempts = 1",
+                "problem = \"say sorry\"",
+                "reply = \"Hi Ana!\"",
+            ),
+            after.changesSince(ana),
+        )
+        // Only what is new: a fact that was there is not listed again, and a problem that was solved is.
+        assertEquals(
+            listOf("facts += \"the driver is 5 minutes away\"", "problem = \"\""),
+            after.copy(facts = after.facts + "the driver is 5 minutes away", problem = "").changesSince(after),
+        )
+        assertEquals(emptyList(), after.changesSince(after))
     }
 }
