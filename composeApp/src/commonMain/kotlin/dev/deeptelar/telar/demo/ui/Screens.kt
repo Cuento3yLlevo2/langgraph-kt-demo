@@ -229,6 +229,16 @@ private fun ModelPicker(selected: ClaudeModel, onSelect: (ClaudeModel) -> Unit) 
     }
 }
 
+/** What a service is, in a sentence under its name. */
+private val ModelMode.detail: String
+    get() = when (this) {
+        ModelMode.Scripted -> "Fixed answers. Works offline and needs no key."
+        ModelMode.Claude -> "Real answers for the stages that ask a model. Needs your Anthropic API key."
+        ModelMode.OpenAi -> "The same, from a model of OpenAI. Needs your OpenAI API key."
+        ModelMode.Gemini -> "The same, from a model of Google. Needs your Gemini API key."
+        ModelMode.Other -> "Any other server with the API of OpenAI: Ollama on this device, Groq, Mistral, OpenRouter."
+    }
+
 @Composable
 fun OptionsScreen(settings: Settings, game: Game, onSave: (Settings) -> Unit, onBack: () -> Unit) {
     val colors = Theme.colors
@@ -237,30 +247,29 @@ fun OptionsScreen(settings: Settings, game: Game, onSave: (Settings) -> Unit, on
     DotMatrix("Options", pitch = if (LocalCompact.current) 3.dp else 5.dp)
 
     Panel("Model", Modifier.fillMaxWidth()) {
-        Choice(
-            draft.mode == ModelMode.Scripted,
-            "Scripted",
-            "Fixed answers. Works offline and needs no key.",
-            { draft = draft.copy(mode = ModelMode.Scripted) },
-        )
-        Choice(
-            draft.mode == ModelMode.Claude,
-            "Claude",
-            "Real answers for the stages that ask a model. Needs your Anthropic API key.",
-            { draft = draft.copy(mode = ModelMode.Claude) },
-        )
-        if (draft.mode == ModelMode.Claude) {
-            Field(draft.apiKey, { draft = draft.copy(apiKey = it) }, label = "Anthropic API key", secret = true)
-            ModelPicker(ClaudeModels.byId(draft.modelId)) { draft = draft.copy(modelId = it.id) }
+        ModelMode.entries.forEach { mode ->
+            Choice(draft.mode == mode, mode.title, mode.detail, { draft = draft.copy(mode = mode) })
+        }
+        if (draft.mode != ModelMode.Scripted) {
+            if (draft.mode == ModelMode.Other) {
+                Field(draft.address, { draft = draft.copy(address = it) }, label = "Address, up to and including the version")
+                Body("Ollama answers a web page only when it was started with OLLAMA_ORIGINS set to the address of the page.", color = colors.dim)
+            }
+            Field(draft.apiKey, { draft = draft.withKey(it) }, label = draft.mode.keyLabel, secret = true)
+            if (draft.mode == ModelMode.Claude) {
+                ModelPicker(ClaudeModels.byId(draft.modelId)) { draft = draft.withModel(it.id) }
+            } else {
+                Field(draft.modelId, { draft = draft.withModel(it) }, label = "Model, one that can call tools")
+            }
             Choice(
                 draft.rememberKey,
                 "Remember the key on this device",
-                "The key goes only to api.anthropic.com, straight from this app. Unticked, it is kept in memory and " +
-                    "forgotten when you close the page. Requests are billed to your account.",
+                "The key goes only to ${draft.host.ifEmpty { "the address above" }}, straight from this app. Unticked, it is kept in " +
+                    "memory and forgotten when you close the page. Requests are billed to your account.",
                 { draft = draft.copy(rememberKey = !draft.rememberKey) },
                 role = Role.Checkbox,
             )
-            if (draft.apiKey.isBlank()) Body("Without a key the game keeps using the scripted model.", color = colors.yellow)
+            draft.missing?.let { Body("Without $it the game keeps using the scripted model.", color = colors.yellow) }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             PillButton("Save", { onSave(draft) }, emphasis = Emphasis.Primary, enabled = draft != settings)

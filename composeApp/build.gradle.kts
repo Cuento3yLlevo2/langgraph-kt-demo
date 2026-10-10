@@ -97,6 +97,7 @@ kotlin {
             implementation(libs.telar.serialization)
             implementation(libs.telar.agent)
             implementation(libs.telar.anthropic)
+            implementation(libs.telar.openai)
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.ui)

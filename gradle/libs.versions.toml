@@ -12,6 +12,7 @@ telar = "0.1.0-alpha08"
 telar-core = { module = "dev.deeptelar:telar-core", version.ref = "telar" }
 telar-agent = { module = "dev.deeptelar:telar-agent", version.ref = "telar" }
 telar-anthropic = { module = "dev.deeptelar:telar-anthropic", version.ref = "telar" }
+telar-openai = { module = "dev.deeptelar:telar-openai", version.ref = "telar" }
 telar-serialization = { module = "dev.deeptelar:telar-serialization", version.ref = "telar" }
 telar-checkpoint-file = { module = "dev.deeptelar:telar-checkpoint-file", version.ref = "telar" }
 telar-checkpoint-browser = { module = "dev.deeptelar:telar-checkpoint-browser", version.ref = "telar" }
