@@ -58,10 +58,23 @@ Requires JDK 17 or newer. The Android app also needs the Android SDK with platfo
 directory. It runs on Android 7 and newer.
 
 Stages 6 and 8 ask a model. By default that is a scripted one with fixed answers. To play them
-with Claude, enter your own Anthropic API key under Options and pick a model; they are listed from
-the cheapest to the most expensive, with their prices. The key goes straight from the app
-to `api.anthropic.com` and is kept in memory unless you tick "Remember the key on this device".
-Requests are billed to your account.
+with a real model, pick a service under Options and enter your own key for it:
+
+| Service | What you enter |
+|---|---|
+| Claude | Your Anthropic API key, and one of the models on the list. They are listed from the cheapest to the most expensive, with their prices. |
+| OpenAI | Your OpenAI API key. The model is `gpt-5` unless you name another. |
+| Gemini | Your Gemini API key. The model is `gemini-3.8-flash` unless you name another. |
+| Other address | The address of any other server with the API of OpenAI, a model, and a key if the server asks for one. It starts with the address of an Ollama on your device. |
+
+The model has to be one that can call tools. The key goes straight from the app to the service and
+nowhere else, and it is kept in memory unless you tick "Remember the key on this device". Requests
+are billed to your account.
+
+In the browser the game calls the service from the page, so the service has to accept that.
+Anthropic, OpenAI, Google, Groq, Mistral and OpenRouter do. An Ollama on your device only answers
+the page when it was started with `OLLAMA_ORIGINS=https://deeptelar.github.io`. The desktop
+and the Android app have no such limit.
 
 ## How it works
 
@@ -85,8 +98,9 @@ Requests are billed to your account.
 ## Layout
 
 - `game/`: the ticket (the state), the graphs of the stages, the tools of the agent
-- `llm/`: the scripted model, and the Claude models on offer. The chat model interface, the Claude
-  client and the agent loop come from `telar-agent` and `telar-anthropic`
+- `llm/`: the scripted model, and the Claude models on offer. The chat model interface, the agent
+  loop and the clients come from `telar-agent`, `telar-anthropic` and `telar-openai`. Which service
+  answers is decided in `ui/Settings.kt`
 - `storage/`: which checkpointer of the library each platform uses, and `KeyValueStore` for the
   settings and the cleared stages
 - `ui/`: the screens, the board, and `Game.kt`, which runs the graphs for them

@@ -112,7 +112,10 @@ class ScreenshotTest {
         shoot("stages", Screen.Stages)
         shoot("stages-phone", Screen.Stages, width = 390, height = 1100)
         shoot("options", Screen.Options)
-        shoot("options-claude", Screen.Options, height = 1000, settings = Settings(mode = ModelMode.Claude, apiKey = "sk-ant-example"))
+        shoot("options-claude", Screen.Options, height = 1200, settings = Settings(ModelMode.Claude).withKey("sk-ant-example"))
+        shoot("options-gemini", Screen.Options, height = 1000, settings = Settings(ModelMode.Gemini).withKey("example"))
+        shoot("options-other", Screen.Options, height = 1100, settings = Settings(ModelMode.Other).withModel("llama3.2"))
+        shoot("options-other-phone", Screen.Options, width = 390, height = 1500, settings = Settings(ModelMode.Other))
     }
 
     /** The picture of a link to the game. `wasmJsMain/resources/social-preview.png` is a copy of it. */

@@ -376,3 +376,42 @@ What the pass showed:
   `HttpClient()` on the CIO engine, which ends a request after 15 seconds. `AnthropicChatModel` now
   sets a limit of five minutes for its own requests. This follows from the changelog of the library
   and was not measured in the game.
+
+## The tenth pass: more models than Claude
+
+The game could ask the scripted model or Claude. This pass adds OpenAI, Gemini and any other server
+with the API of OpenAI to the Options, all through `OpenAiChatModel` of `telar-openai`.
+
+What changed here: `Settings` keeps a key and a model for each service and builds the model, the
+Options screen lists the services, and `telar-openai` is a seventh dependency. No graph, no stage
+and no line of `Game.kt` changed.
+
+What was checked:
+
+- 60 tests pass on the JVM and 56 in headless Chrome (wasmJs). The new ones check the address, the
+  key and the model of the request each service gets, and what of the settings is stored.
+- From headless Chrome, with a key that is not one, the game's own settings called Anthropic, OpenAI,
+  Google, Groq, Mistral and OpenRouter, with `chat` and with `stream`. Each answered with its own
+  error about the key, so each accepts a request from a web page.
+
+Not checked: an answer of any of the new services in a stage, which needs a key. Ollama from the
+browser. The hosted game in a real browser, and the Android app on a device.
+
+What the pass showed:
+
+- **One interface was enough.** The game knows `ChatModel` and nothing of a service. A new service
+  is a line that builds another model, and for the ones with the API of OpenAI not even a new class:
+  only the address differs.
+- **In a browser, a request without a response is not a `ChatModelException`.** Ktor's engine for
+  the browser fails with `kotlin.Error("Fail to fetch")` when the server is not running, the device
+  is offline or the server refuses the page. `AnthropicChatModel` and `OpenAiChatModel` catch
+  `Exception`, as the engine of the graph does, so the `Error` passes all of them, although both
+  classes say they throw `ChatModelException` when the API cannot be reached. `Game.kt` catches
+  `Exception` too, so such a run would end without a game over screen; that follows from the code
+  and was not watched in a browser. It was true for Claude before this pass, and only showed now,
+  with an Ollama that was not running. The game wraps its models in `orUnreachable`
+  (`llm/Unreachable.kt`) until the library does this itself.
+- **The names of the models are the player's to know.** The game lists Claude's models with their
+  prices, which went out of date once already. For the other services it has one field and a
+  default, and the service says so when the name is wrong.
+
