@@ -1,5 +1,6 @@
 package dev.deeptelar.telar.demo
 
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.ImageComposeScene
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.use
@@ -40,9 +41,11 @@ class ScreenshotTest {
         height: Int = 860,
         dark: Boolean = true,
         settings: Settings = Settings(),
-    ) {
+    ) = shoot(name, width, height, dark) { GameScreens(game, settings, screen, onNavigate = {}, onSave = {}) }
+
+    private fun shoot(name: String, width: Int, height: Int, dark: Boolean = true, content: @Composable () -> Unit) {
         ImageComposeScene(width * 2, height * 2, Density(2f)) {
-            PizzaTheme(dark) { GameScreens(game, settings, screen, onNavigate = {}, onSave = {}) }
+            PizzaTheme(dark) { content() }
         }.use { scene ->
             // Text that is typed out letter by letter needs a second of real time to be complete.
             scene.render().close()
@@ -110,5 +113,14 @@ class ScreenshotTest {
         shoot("stages-phone", Screen.Stages, width = 390, height = 1100)
         shoot("options", Screen.Options)
         shoot("options-claude", Screen.Options, height = 1000, settings = Settings(mode = ModelMode.Claude, apiKey = "sk-ant-example"))
+    }
+
+    /** The picture of a link to the game. `wasmJsMain/resources/social-preview.png` is a copy of it. */
+    @Test
+    fun theSocialCardCanBeDrawn() {
+        // Stage 4, halfway: the kitchen and the driver are both at work.
+        game.controller(4).play(delivery)
+        scope.advanceTimeBy(500)
+        shoot("social-preview", SOCIAL_WIDTH, SOCIAL_HEIGHT) { SocialCard(game.controller(4)) }
     }
 }
