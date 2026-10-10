@@ -350,3 +350,29 @@ What the pass showed about the library:
 - **The two nodes of the agent have the names the library gives them.** Stage 8 calls them `model`
   and `tools`, as the tutorial does. Stage 6 names its model node `assistant`, so the same node has
   two names in the game.
+
+## The ninth pass: a release that asks for nothing
+
+`0.1.0-alpha08` adds a decision model on any chat model and a time limit of their own for the model
+classes, and it makes a tool agent work with Gemini. This pass moved the game to the release from
+Maven Central.
+
+What changed here: the version of the six dependencies, and nothing else.
+
+What was checked:
+
+- 50 tests pass on the JVM and 47 in headless Chrome (wasmJs), the same as before the move.
+- The browser bundle and the Android app build.
+- The file of `telar-core` that Gradle used has the checksum of the file on Maven Central.
+
+Not checked: a call to Claude from the game, the hosted game in a real browser, and the Android app
+on a device.
+
+What the pass showed:
+
+- **A release without a new kind of event needs no change.** The two moves before this one each
+  added a branch to the `when` over the events of a stream. This one compiled as it was.
+- **The desktop app should no longer cut a long answer off.** It builds its client with
+  `HttpClient()` on the CIO engine, which ends a request after 15 seconds. `AnthropicChatModel` now
+  sets a limit of five minutes for its own requests. This follows from the changelog of the library
+  and was not measured in the game.
