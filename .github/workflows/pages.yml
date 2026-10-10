@@ -1,7 +1,7 @@
 name: Pages
 
-# Builds the browser version of the game and publishes it to GitHub Pages.
-# A pull request only builds it; the deployment runs on main.
+# Tests the game, builds its browser version and publishes that to GitHub Pages.
+# A pull request only tests and builds; the deployment runs on main, and only when the tests pass.
 on:
   push:
     branches: [main]
@@ -16,6 +16,34 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v6
+      # The JVM run has every test. The browser run repeats the common ones in headless Chrome,
+      # where the game is played.
+      - name: Run the tests on the JVM and in a browser
+        run: ./gradlew :composeApp:jvmTest :composeApp:wasmJsBrowserTest --continue
+      # The JVM tests draw every screen of the game, so a pull request can be looked at without a build.
+      - name: Upload the screenshots
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: screenshots
+          path: composeApp/build/screenshots/
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-reports
+          path: composeApp/build/reports/
+
   build:
     name: Build
     runs-on: ubuntu-latest
@@ -35,7 +63,7 @@ jobs:
   deploy:
     name: Deploy
     if: github.event_name != 'pull_request'
-    needs: build
+    needs: [test, build]
     runs-on: ubuntu-latest
     permissions:
       pages: write
