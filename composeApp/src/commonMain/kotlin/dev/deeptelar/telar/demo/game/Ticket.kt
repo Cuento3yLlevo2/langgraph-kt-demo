@@ -27,6 +27,23 @@ data class Ticket(
     val chat: List<ChatMessage> = emptyList(),
 )
 
+/**
+ * What a step wrote into the ticket: a line for each field that differs from [before], written the
+ * way the node that changed it would write it.
+ *
+ * `approved` is not among them. The player sets it at a save point, and no node does.
+ */
+fun Ticket.changesSince(before: Ticket): List<String> = buildList {
+    if (topic != before.topic) add("topic = \"$topic\"")
+    facts.drop(before.facts.size).forEach { add("facts += \"$it\"") }
+    val messages = chat.size - before.chat.size
+    if (messages > 0) add("chat += $messages ${if (messages == 1) "message" else "messages"}")
+    if (refund != before.refund) add("refund = $refund")
+    if (attempts != before.attempts) add("attempts = $attempts")
+    if (problem != before.problem) add("problem = \"$problem\"")
+    if (reply != before.reply) add("reply = \"$reply\"")
+}
+
 /** A message waiting in a stage's inbox. */
 data class Mail(val from: String, val text: String)
 

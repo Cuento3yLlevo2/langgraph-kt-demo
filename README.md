@@ -30,7 +30,9 @@ Each stage is the level of the tutorial with the same number: stage 3 is level 3
 
 Watching a run with `stream()`, the second half of level 4, is not only in stage 4. It is the game:
 the board, the ticket panel and the run log are drawn from the events of `stream()` as they arrive.
-In the stages that ask a model, the run log shows the answer word by word while the model writes it.
+Under each step, the run log lists what the step wrote into the ticket (`topic = "delivery"`,
+`facts += "..."`), and after a conditional edge it says which node the edge picked. In the stages
+that ask a model, the log shows the answer word by word while the model writes it.
 
 Press a tile on the board to see the code behind it: the node, its arrows and the functions it calls.
 The text is cut out of the game's own source files when the app is built, so it is always the code

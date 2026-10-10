@@ -27,6 +27,7 @@ import dev.deeptelar.telar.demo.game.Desk
 import dev.deeptelar.telar.demo.game.Mail
 import dev.deeptelar.telar.demo.game.Stage
 import dev.deeptelar.telar.demo.game.Ticket
+import dev.deeptelar.telar.demo.game.changesSince
 import dev.deeptelar.telar.demo.game.stages
 import dev.deeptelar.telar.demo.storage.KeyValueStore
 
@@ -47,11 +48,14 @@ enum class Phase {
     Clear,
 }
 
-/** What kind of line a [LogLine] is, which decides its colour. */
-enum class Tone { Plain, Saved, Failed, Done }
+/** What kind of line a [LogLine] is, which decides its colour. [Detail] says more about the line above it. */
+enum class Tone { Plain, Detail, Saved, Failed, Done }
 
 /** One line of a stage's run log: a short [tag] and what happened. */
 data class LogLine(val tag: String, val text: String, val tone: Tone = Tone.Plain)
+
+/** The log's line for a step whose nodes handed the ticket on as they got it. */
+private const val UNCHANGED = "ticket unchanged"
 
 /** Runs the graph of one stage and exposes the run as Compose state. */
 class StageController(
@@ -126,6 +130,9 @@ class StageController(
 
     private var job: Job? = null
     private var lastNodes: List<String> = emptyList()
+
+    /** The choices of conditional edges that the log already has, so a retry does not report one twice. */
+    private var chosen: Set<Pair<String, String>> = emptySet()
     private var lastMail: Mail? = null
 
     init {
@@ -146,13 +153,14 @@ class StageController(
         writing = ""
         step = 0
         lastNodes = listOf(START)
+        chosen = emptySet()
         follow(graph.stream(ticket!!, config))
     }
 
     /** Answers a save point: the decision is written into the ticket and the run continues. */
     fun decide(approved: Boolean) {
         if (running) return
-        log = log + LogLine("YOU", if (approved) "approved" else "denied", Tone.Saved)
+        log = log + LogLine("YOU", if (approved) "approved" else "denied", Tone.Saved) + LogLine("", "approved = $approved", Tone.Detail)
         follow(graph.streamResume(config) { it.copy(approved = approved) })
     }
 
@@ -226,7 +234,7 @@ class StageController(
         when (event) {
             is GraphEvent.NodeStarted -> {
                 active = active + event.node
-                trail = trail + lastNodes.filter { leadsTo(it, event.node) }.map { it to event.node }
+                arriveAt(event.node)
             }
             // A model node reports each piece of text while the model writes it. No stage has a graph
             // inside a graph, but the text of a model in one would be read the same way.
@@ -239,10 +247,13 @@ class StageController(
             }
             is GraphEvent.StepCompleted -> {
                 step = event.step
+                val before = ticket ?: event.state
                 log = log + LogLine(event.step.toString().padStart(2, '0'), event.nodes.joinToString(" + ")) +
-                    event.state.chat.drop(ticket?.chat.orEmpty().size).flatMap(::toolLines)
+                    event.state.chat.drop(before.chat.size).flatMap(::toolLines) +
+                    event.state.changesSince(before).ifEmpty { listOf(UNCHANGED) }.map { LogLine("", it, Tone.Detail) }
                 ticket = event.state
                 lastNodes = event.nodes
+                chosen = emptySet()
             }
             is GraphEvent.Interrupted -> {
                 ticket = event.state
@@ -251,14 +262,21 @@ class StageController(
             }
             is GraphEvent.Completed -> {
                 ticket = event.state
-                trail = trail + lastNodes.filter { leadsTo(it, END) }.map { it to END }
+                arriveAt(END)
                 visited = visited + END
                 log = log + LogLine("END", "reply sent", Tone.Done)
             }
         }
     }
 
-    private fun leadsTo(from: String, to: String): Boolean = topology.edges.any { it.from == from && it.to == to }
+    /** Lights the arrows that led to [node], and logs the choice of each conditional edge among them. */
+    private fun arriveAt(node: String) {
+        val followed = topology.edges.filter { it.to == node && it.from in lastNodes }
+        trail = trail + followed.map { it.from to node }
+        val choices = followed.filter { it.isConditional }.map { it.from to node } - chosen
+        log = log + choices.map { (from, to) -> LogLine(" ->", "the edge after $from picked ${if (to == END) "END" else to}", Tone.Detail) }
+        chosen = chosen + choices
+    }
 
     private fun toolLines(message: ChatMessage): List<LogLine> = when (message) {
         is ChatMessage.Assistant -> message.toolCalls.map { LogLine(" >>", "${it.name} ${it.input}") }

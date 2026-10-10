@@ -323,6 +323,7 @@ private fun LogPanel(controller: StageController, modifier: Modifier = Modifier)
             controller.log.forEach { line ->
                 val color = when (line.tone) {
                     Tone.Plain -> colors.ink
+                    Tone.Detail -> colors.dim
                     Tone.Saved -> colors.yellow
                     Tone.Failed -> colors.red
                     Tone.Done -> colors.ink
